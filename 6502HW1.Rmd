@@ -1,0 +1,324 @@
+---
+title: 'STAT 6502 HW #1'
+author: "Daniel Park"
+date: "January 6, 2016"
+output: html_document
+---
+
+###Chapter 10: 5, 6, 10, 11, 15, 29 (for part c, additionally run a bootstrap to compare)  
+
+###5.  
+Let $X_1, ..., X_n$ be a sample (i.i.d.) from a distribution function, $F$, and let $F_n$ denote the ecdf.  Show that
+$$\text{Cov}[F_n(u), F_n(v)]=\frac{1}{n}[F(m)-F(u)F(v)]$$
+where $m=\text{min}(u,v)$. Conclude that $F_n(u)$ and $F_n(v)$ are positively correlated: If $F_n(u)$ overshoots $F(u)$, then $F_n(v)$ will tend to overshoot $F(v)$.  
+
+###6.  
+Various chemical tests were conducted on beeswax by White, Riethof, and Kushnir (1960).  In particular, the percentage of hydrocarbons in each sample of wax was determined.
+
+###6a.  
+Plot the ecdf, a histogram, and a normal probability plot of the percentages of hydrocarbons given in the following table.  Find the .90, .75, .50, .25, and .10 quantiles.  Does the distribution appear Gaussian?
+
+```{r echo=FALSE}
+library(ggplot2)
+raw.text <- "
+MeltingPoint,Hydrocarbon
+63.78,14.27
+63.45,14.8
+63.58,12.28
+63.08,17.09
+63.4,15.1
+64.42,12.92
+63.27,15.56
+63.1,15.38
+63.34,15.15
+63.5,13.98
+63.83,14.9
+63.63,15.91
+63.27,14.52
+63.3,15.63
+63.83,13.83
+63.5,13.66
+63.36,13.98
+63.86,14.47
+63.34,14.65
+63.92,14.73
+63.88,15.18
+63.36,14.49
+63.36,14.56
+63.51,15.03
+63.51,15.4
+63.84,14.68
+64.27,13.33
+63.5,14.41
+63.56,14.19
+63.39,15.21
+63.78,14.75
+63.92,14.41
+63.92,14.04
+63.56,13.68
+63.43,15.31
+64.21,14.32
+64.24,13.64
+64.12,14.77
+63.92,14.3
+63.53,14.62
+63.5,14.1
+63.3,15.47
+63.86,13.73
+63.93,13.65
+63.43,15.02
+64.4,14.01
+63.61,14.92
+63.03,15.47
+63.68,13.75
+63.13,14.87
+63.41,15.28
+63.6,14.43
+63.13,13.96
+63.69,14.57
+63.05,15.49
+"
+
+wax <- read.table(header=TRUE, sep=",", text=raw.text)
+```
+
+```{r}
+hydrobject <- ggplot(wax, aes(Hydrocarbon)) 
+hydrobject + 
+  stat_ecdf(geom = "step") +
+  labs(title="ECDF of Percentage of Hydrocarbons in Beeswax Samples", 
+       x='Percentage',y='Cumulative Frequency')
+
+hydrobject + 
+  geom_histogram(mapping=aes(y=..density..),color="black", fill = "white", binwidth=1/3) +
+  stat_function(fun=dnorm, args=list(mean=mean(wax$Hydrocarbon), sd=sd(wax$Hydrocarbon))) + 
+  geom_line(mapping=aes(color="Hydro Density"), stat="density", color='dodgerblue') +
+  labs(title="Histogram of Percentage of Hydrocarbons in Beeswax Samples", 
+    x='Hydrocarbon Composition (%)',y='Density')
+
+quantile(wax$Hydrocarbon, c(.1, .25, .5, .75, .9)) 
+
+```
+
+###6b.  
+The average percentage of hydrocarbons in microcrystalline wax (a synthetic commercial wax) is 85%.  Suppose that beeswax was diluted with 1% microcrystalline wax.  Could this be detected?  What about a 3% or a 5%  dilution?  (Such questions were one of the main concerns of the beeswax study.)
+
+Assuming that the distribution of hydrocarbons in beeswax is normally distributed, we can generate a sample of data that has the mean and standard deviation of our observed values.  We can then add the adulterant into the randomly generated numbers and divide by the new volume to get the new percentage.
+
+Then we can compare the means of the adulterated samples and compare them with a confidence interval based on the observations.
+```{r}
+set.seed(123)
+n <- nrow(wax)
+hc.mean <- mean(wax$Hydrocarbon)
+hc.sd <- sd(wax$Hydrocarbon)
+sample.data <- rnorm(n=n, mean=hc.mean, sd=hc.sd)
+wax$mix_1pct <- (sample.data + .01*85)/1.01 # diluting wax
+wax$mix_3pct <- (sample.data + .03*85)/1.03 # divide by 1.03 to get new pctg
+wax$mix_5pct <- (sample.data + .05*85)/1.05
+hc.mean + qt(c(.025, .975), df=n)*hc.sd/sqrt(n) # confidence interval
+
+mean(wax$mix_1pct)
+mean(wax$mix_3pct)
+mean(wax$mix_5pct)
+```
+So it appears that it is possible to detect for all samples.
+
+
+```{r echo=FALSE, eval=FALSE}
+library(reshape2)
+wax.hydro <- wax[,2:5]
+wax.melt <- melt(wax.hydro, variable.name="type", value.name="pct")
+ggplot(wax.melt, aes(x=type, y=pct)) + geom_boxplot()
+```
+
+###10.  
+Let $X_1, ..., X_n$ be a sample from cdf $F$ and denote the order statistics by $X_{(1)}, X_{(2)}, ..., X_{(n)}$.  We will assume that $F$ is continuous, with density function $f$.  From Theorem A in Section 3.7, the density function of $X_{(k)}$ is
+$$f_k(x)=n\binom{n-1}{k-1}[F(x)]^{k-1}[1-F(x)]^{n-k}f(x)$$
+
+###10a.  
+Find the mean and variance of $X_{(k)}$ from a uniform distribution on $[0,1]$.  You will need to use the fact that the density of $X_{k}$ integrates to 1.  Show that
+$$
+\begin{aligned}  
+\text{Mean} &= \frac{k}{n+1} \\
+\text{Variance} &= \frac{1}{n+2}\bigg(\frac{k}{n+1}\bigg)\bigg(1-\frac{k}{n+1}\bigg)
+\end{aligned}
+$$
+
+For $U[0,1]$, $f(x)=1$.  So
+$$
+\begin{aligned}
+f_k(x) &= n\binom{n-1}{k-1}[F(x)]^{k-1}[1-F(x)]^{n-k}\cdot 1 \\
+       &= n\frac{(n-1)!}{(k-1)!(n-k)!}[F(x)]^{k-1}[1-F(x)]^{n-k} \\
+       &= n\frac{\Gamma(n)}{\Gamma(k)\Gamma(n-k+1)}[F(x)]^{k-1}[1-F(x)]^{n-k} \\
+       &= n\frac{\Gamma(n+1)}{n\Gamma(k)\Gamma(n-k+1)}[F(x)]^{k-1}[1-F(x)]^{(n-k+1)-1} \\
+       &= \frac{\Gamma(n+1)}{\Gamma(k)\Gamma(n-k+1)}[F(x)]^{k-1}[1-F(x)]^{(n-k+1)-1} \\
+\end{aligned}
+$$
+This resembles the beta distribution, $B(\alpha,\beta)$, where $\mu=\frac{\alpha}{\alpha+\beta}$ and $\sigma^2=\frac{\alpha\beta}{(\alpha+\beta)^2(\alpha+\beta+1)}$.
+
+So 
+$$\mu = \frac{k}{n+1}$$
+and
+$$
+\begin{aligned}
+\sigma^2 &= \frac{k(n-k+1)}{(n+1)^2(n+2)} \\
+         &= \frac{1}{n+2}\frac{k}{n+1}\frac{n+1-k}{n+1} \\
+         &= \frac{1}{n+2}\frac{k}{n+1}\bigg(\frac{n+1}{n+1}-\frac{k}{n+1}\bigg)\\
+         &= \frac{1}{n+2}\bigg(\frac{k}{n+1}\bigg)\bigg(1-\frac{k}{n+1}\bigg)\\
+\end{aligned}
+$$
+
+###10b.  
+Find the approximate mean and variance of $Y_{(k)}$, the *k*th-order statistic of a sample of size $n$ from $F$.  To do this, let
+$$X_i=F(Y_i)$$
+or
+$$Y_i=F^{-1}(X_i)$$
+The $X_i$ are a sample from a $U[0,1]$ distribution (why?).  Use the propagation of error formula,
+$$
+\begin{aligned}
+Y_{(k)} &= F^{-1}(X_{(k)}) \\
+        &\approx F^{-1} \bigg(\frac{k}{n+1}\bigg)+\bigg(X_{(k)}-\frac{k}{n+1}\bigg)\frac{d}{dx}F^{-1}(x)\bigg|_{k/(n+1)}
+\end{aligned}
+$$
+and argue that
+$$
+\begin{aligned}
+E(Y_{(k)}) &\approx F^{-1}\bigg(\frac{k}{n+1}\bigg) \\
+\text{Var}(Y_{(k)}) &\approx \frac{k}{n+1}\bigg(1-\frac{k}{n+1}\bigg)\frac{1}{(f\{F^{-1}[k/(n+1)]\})^2}\bigg(\frac{1}{n+2}\bigg)
+\end{aligned}
+$$
+
+In finding the mean of the approximate value of $Y_{(k)}$, we note that many of the terms are constants:
+$$
+\begin{aligned}
+E\big(Y_{(k)}) &\approx E\Bigg[F^{-1} \bigg(\frac{k}{n+1}\bigg)+\bigg(X_{(k)}-\frac{k}{n+1}\bigg)\frac{d}{dx}F^{-1}(x)\bigg|_{k/(n+1)}\Bigg] \\
+  &= E\bigg[F^{-1} \bigg(\frac{k}{n+1}\bigg)\bigg] + E\bigg[\bigg(X_{(k)}-\frac{k}{n+1}\bigg)\frac{d}{dx}F^{-1}(x)\bigg|_{k/(n+1)}\bigg] \\
+  &= F^{-1} \bigg(\frac{k}{n+1}\bigg) + \frac{d}{dx}F^{-1}(x)\bigg|_{k/(n+1)}\cdot E\bigg[X_{(k)}-\frac{k}{n+1}\bigg] \\
+  &= F^{-1} \bigg(\frac{k}{n+1}\bigg) + \frac{d}{dx}F^{-1}(x)\bigg|_{k/(n+1)}\cdot 0 \\
+  &= F^{-1} \bigg(\frac{k}{n+1}\bigg)
+\end{aligned}
+$$  
+Note that $E\Big[X_{(k)}-k/(n+1)\Big]=0$ since it is essentially expressing the property $E(X-\mu_X)=0$.
+
+###10c.  
+Use the results of parts (a) and (b) to show that the variance of the *p*th sample quantile is approximately
+$$\frac{1}{nf^2(x_p)}p(1-p)$$
+where $x_p$ is the *p*th quantile.  
+
+###10d.  
+Use the result of part (c) to find the approximate variance of the median of a sample of size *n* from a $N(\mu, \sigma^2)$ distribution.  Compare to the variance of the sample mean. 
+
+###11.  
+Calculate the hazard function for
+$$F(t)=1-e^{-\alpha t^{\beta}}, \ \ \ t\geq 0$$
+
+The hazard function is defined as
+$$h(t)=\frac{f(t)}{1-F(t)}$$
+
+The pdf of our provided cdf is
+$$
+\begin{aligned}
+f(t) &= F'(t) \\
+     &= 0 - e^{-\alpha t^{\beta}}(-\alpha \beta)t^{\beta-1} \\
+     &= \alpha \beta e^{-\alpha t^{\beta}}t^{\beta-1}
+\end{aligned}
+$$
+
+So the hazard function is
+
+$$
+\begin{aligned}
+h(t) &= \frac{\alpha \beta \exp\big(-\alpha t^{\beta}\big)t^{\beta-1}}{1-\big[1-\exp\big(-\alpha t^{\beta}\big)\big]} \\
+     &= \frac{\alpha \beta \exp\big(-\alpha t^{\beta}\big)t^{\beta-1}}{\exp\big(-\alpha t^{\beta}\big)} \\
+     &= \alpha \beta t^{\beta-1}
+\end{aligned}
+$$
+
+###15.  
+A prisoner is told that he will be released at a time chosen uniformly at random within the next 24 hours.  Let $T$ denote the time that he is released.  What is the hazard function for $T$?  For what values of $t$ is it smallest and largest?  If he has been waiting for 5 hours, is it more likely that he will be released in the next few minutes than if he has been waiting for 1 hour?
+
+pdf: $f(t)=\frac{1}{24}$  
+cdf: $F(t)=\frac{t}{24}$
+
+Hazard function:
+$$
+\begin{aligned}
+h(t) &= \frac{\frac{1}{24}}{1-\frac{t}{24}} \\
+     &= \frac{1}{24-t}
+\end{aligned}
+$$
+
+###29.  
+Of the 26 measurements of the heat of sublimation of platinum, 5 are outliers (see Figure 10.10).  Let $N$ denote the number of these outliers that occur in a bootstrap sample (sample with replacement) of the 26 measurements.  
+```{r echo=FALSE}
+raw_text = "
+136.3
+136.6
+135.8
+135.4
+134.7
+135
+134.1
+143.3
+147.8
+148.8
+134.8
+135.2
+134.9
+146.5
+141.2
+135.4
+134.8
+135.8
+135
+133.7
+134.4
+134.9
+134.8
+134.5
+134.3
+135.2
+"
+platinum <- scan(text=raw_text)
+```
+
+###29a.  
+Explain why the distribution of $N$ is binomial.  
+
+If $N$ denotes the number of outliers, each measurement is considered an outlier or not an outlier.  Therefore, each observation is a Bernoulli random variable, and $N$ is binomially distributed.
+
+###29b.  
+Find $P(N \geq 10)$.  
+
+Based on our data, $p=5/26$.
+
+The probability that $N=x$ is given by the binomial pdf:
+$$P(N=x) = \binom{26}{n}\bigg(\frac{5}{26}\bigg)^x\bigg(1-\frac{5}{26}\bigg)^{26-x}$$
+
+We can use the `pbinom()` function in `R` to determine $P(N \geq 10)$:
+```{r}
+pbinom(q=9, size=26, prob=5/26, lower.tail=FALSE)
+```
+
+
+###29c.  
+In 1000 bootsrap samples, how many would you expect to contain 10 or more of these outliers?  (Also, run a bootstrap to compare.)
+
+```{r}
+sum(rbinom(n=1000, size=26, prob=5/26) >= 10)
+mean(replicate(n=1000, 
+               expr=sum(rbinom(n=1000, size=26, prob=5/26) >= 10), 
+               simplify = "array"))
+```
+
+
+
+###29d.  
+What is the probability that a bootstrap sample is composed entirely of these outliers?  
+
+```{r}
+set.seed(123)
+sum(rbinom(n=1000000, size=26, prob=5/26) == 29)
+```
+
+Given that there are zero out of 1 million simulations where we observe 26 outliers, we can conclude that the probability of such a scenario is essentially zero.
