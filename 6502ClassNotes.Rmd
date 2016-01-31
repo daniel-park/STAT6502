@@ -1,0 +1,1457 @@
+---
+title: "STAT 6502 Class Notes"
+author: "Daniel Park"
+date: '`r Sys.Date()`'
+output:
+  html_document: default
+  pdf_document: default
+header-includes:
+- \usepackage{bbm}
+- \usepackage{framed}
+---
+
+**January 04, 2016**
+
+###Chapter 10: Data Summary  
+We now tackle the problem of estimating the behavior of a random variable where we have no (or very little) information about the population that the measurements came from.
+
+Recall the population is uniquely defined by the cumulative distribution.
+
+The cumulative distribution of $X$ evaluated at $x$ is $P(X \leq x)$.
+
+In statistics, we assume that the sample well represents the population.
+
+Fuctions of a random variable in a sample should be similar to that of the population (e.g. the sample mean to the population mean).  
+
+**Empirical Cumulative Distribution Function**  
+This is the estimator of the cdf, abbreviated as ecdf, and is defined as
+$$F_n(x) = \frac{1}{n}(\text{number of} \ x_i\text{'s that are equal to or less than} \ x)$$
+and has the properties
+
+- let the ordered observations be $x_{(1)}, x_{(2)}, ... , x_{(n)}$.  Then for $x < x_{(1)}, F_n(x) = \frac{1}{n}0= 0$.  
+- for $x_{(k)} \leq x < x_{(k+1)}, F_n(x)=\frac{k}{n}$.  
+- if there are $r$ observations with the value $x$, then $F_n(x)$ has a jump of $\frac{r}{n}$ at $x$.  
+
+We can show the ecdf is a consistent estimator of the cdf.
+
+As $n$ approaches infinity, for fixed $\epsilon > 0$, Chebyshev's inequality gives
+$$
+\begin{aligned}
+\lim_{n \to \infty} P\big(\big|F_n(x)-F(x) \big|<\epsilon\big) &= \lim_{n \to \infty} P\bigg(\bigg|\frac{Y}{n}-p\bigg| < \epsilon\bigg) \\
+                                              &\geq \lim_{n \to \infty} \bigg(1 - \frac{p(1-p)}{n\epsilon^2}\bigg) \\
+                                              &= 1
+\end{aligned}
+$$
+
+Therefore,
+$$\lim_{n \to \infty} P\big(\big|F_n(x) - F(x)\big| < \epsilon \big) = 1$$
+
+$\Big($ The derivation resulted in the inequality $\lim_{n \to \infty} P\big(\big|F_n(x) - F(x)\big| < \epsilon \big) \geq 1$.  However, since probabilities cannot exceed 1, the inequality becomes  $\lim_{n \to \infty} P\big(\big|F_n(x) - F(x)\big| < \epsilon \big) = 1$.$\Big)$
+
+Since $F_n(x) = \hat{p}$ is the proportion of times that $X \leq x$, we may rely on the Weak Law of Large Numbers (WLLN), which states that $F_n(x)$ will converge in probability to $F(x)=p$, or $F_n(x) \xrightarrow{p} F(x)$.
+
+Reminder: $\xrightarrow{p}$ means that it converges in probability.
+
+In fact, the consistency of $F_n$ holds uniformly over the real line
+$$\sup_{- \infty < x < \infty} \big|F_n(x) - F(x) \big| \xrightarrow{p} 0$$
+
+Demonstration in R:
+```{r}
+# randomly selecting numbers, intentionally including two 16s:
+x <- c(16, 16, 14, 3.5, -1, 2.2, 35, 47, 50, 21)
+plot(ecdf(x))
+# Repeat, but this time randomly generate the numbers.
+# We generate 30 observations, each with 20 trials.
+# The expected value of each observation is 6; that is, with a probability
+#   of 0.3, we expect 6 successes from 20 trials.
+y <- rbinom(n=30, size=20, prob=.3)
+y
+plot(ecdf(y), xlim=c(0,20))
+
+# actual distribution:
+points(x=0:20, y=pbinom(q=0:20, size=20, prob=.3), col='red') 
+```
+
+For mathematical purposes, it is convenient to express $F_n$ as 
+$$F_n(x) = \frac{1}{n} \sum_{i=1}^n \textbf{I}_{(-\infty, x]}(X_i)$$
+where $\textbf{I}$ is the usual indicator function.
+$$
+\textbf{I}_{(-\infty, x]}(X_i)=\begin{cases}
+                              1, \text{if} \ X_i \leq x \\
+                              0, \text{if} \ X_i > x
+                               \end{cases}
+$$
+
+Writing it in this way, we see that $\textbf{I}_{(-\infty, x]}(X_i)$ is a Bernoulli random variable with
+$$P(\textbf{I}_{(-\infty, x]}(X_i) = 1) = F(x)$$
+$$\text{and}$$
+$$P(\textbf{I}_{(-\infty, x]}(X_i) = 0) = 1 - F(x)$$
+
+```{r eval=FALSE, echo=FALSE}
+# Note use \mathbbm{1} to make it correctly formatted as a pdf
+```
+
+
+As an estimator, the ecdf is not only consistent, it is unbiased, and its variance gets smaller the further $x$ is from the median.
+
+
+**January 06, 2016**  
+
+**Mean and Variance**  
+Problem: Show that the ecdf is unbiased for the cdf.
+$$
+\begin{aligned}
+E(F_n) &= E\bigg[\frac{1}{n} \sum_{i=1}^n \textbf{I}_{(-\infty,x]}(X_i)\bigg] \\
+       &= \frac{1}{n}nE[\textbf{I}_{(-\infty,x]}(X_i)] \\
+       &= P(X_i \leq x) \\
+       &= F(x)
+\end{aligned}
+$$
+For the variance, note that since $\textbf{I}_{(-\infty,x]}(X_i)$ can only take values 0 or 1, $E[(\textbf{I}_{(-\infty,x]}(X_i))^2] = E[\textbf{I}_{(-\infty,x]}(X_i)]$ which is equal to $P(X_i \leq x)$.  
+
+Therefore,  
+$$
+\begin{aligned}
+\text{Var}(F_n(x)) &= E[F^2_n(x)]-[E(F_n(x))]^2 \\
+                   &= E\bigg[\frac{1}{n^2} \sum_{i=1}^n \textbf{I}_{(-\infty,x]}(X_i) \sum_{j=1}^n \textbf{I}_{(-\infty, x]}(X_j)\bigg]-F^2(x) \\
+                   &= \frac{1}{n^2} \sum_{i=1}^n \sum_{j=1}^n[P(X_i \leq x, X_j \leq x)-F^2(x)] \\
+                   &= \frac{1}{n^2} \sum_{i=1}^n F(x)(1-F(x))+ \frac{1}{n^2} \sum_{i \neq j}[F_{X_iX_j}(x,x)-F^2(x)]
+\end{aligned}
+$$
+If they are independent, then
+$$F_{X_iX_j}(x,x)=F^2(x)$$
+which means that
+$$\sum_{i \neq j}[F_{X_iX_j}(x,x)-F^2(x)] = 0$$
+So,
+$$
+\begin{aligned}
+\text{Var}(F_n(x)) &= \frac{1}{n^2} \sum_{i=1}^n F(x)(1-F(x)) \\
+                   &= \frac{1}{n} F(x)(1-F(x))
+\end{aligned}
+$$
+
+It is clear that the variance hits its maximum when $F(x)=0.5$, otherwise known as the median.  
+
+Also, $\text{Var}(F_n(x))$ gets smaller as you go away from the median.  
+
+A drawback is that the ecdf is always a step-function, whereas the cdf of a continuous distribution is not, so we may lose out on important features.  
+
+```{r}
+curve(pnorm, -3, 3) # cdf of normal dist
+x <- rnorm(300) # 300 observations
+plot(ecdf(x))
+curve(pnorm, -3,3,add=TRUE,col='red') # true cdf
+```
+
+The plotted ecdf are steps.  Note that typically the true cdf is unknown (which is why we're interested in the estimator ecdf).
+
+As an estimator, the ecdf can be used to estimate many functional parameters of $F$.  
+
+**Example**  
+Suppose that
+$$\theta(F)=\int_{-\infty}^{\infty} h(x)dF(x)$$
+which is essentially $E[h(x)]$.  
+
+Substituting $F_n$ for $F$, we get
+$$
+\begin{aligned}
+\hat{\theta} &= \theta(F_n) \\
+             &= \int^{\infty}_{-\infty} h(x)dF_n(x) \\
+             &= \frac{1}{n} \sum_{i=1}^n h(x_i)
+\end{aligned}
+$$
+which is simply the sample mean of $h(x_1), h(x_2),...,h(x_n)$.  
+
+Here, $\theta=\theta(F)$ is the true value of the parameter, and $\hat{\theta}=\theta(F_n)$ is its estimator.
+
+**Example**  
+Suppose that $\theta(F)=\text{Var}(X)$ where $X \sim F$.
+$$\theta(F)=\int^{\infty}_{-\infty} x^2 dF(x)-\bigg(\int_{-\infty}^{\infty}xdF(x)\bigg)^2$$
+and we get
+$$
+\begin{aligned}
+\hat{\theta} &= \theta(F_n) \\
+             &= \frac{1}{n}\sum_{i=1}^n x_i^2-\bigg(\frac{1}{n}\sum_{i=1}^n x_i\bigg)^2 \\
+             &= \frac{1}{n} \sum_{i=1}^n \big(x_i-\overline{X}\big)^2
+\end{aligned}
+$$
+
+**Survival**  
+The survival function is defined as
+$$S(t)=P(T>t)=1-F(t)$$  
+where $T$ is a random variable with cdf $F$.  
+
+This is commonly found in biostatistics and reliability theory as $S(t)$ represents the probability that the lifetime will be longer than $t$.
+
+From our prevous discurssion, the intuitive estimator of the survival function is
+$$S_n(t)=1-F_n(t)$$
+which is consistent and unbiased, the proportion of the data greater than $t$.  
+
+```{r eval=FALSE, echo=FALSE}
+library(ggplot2)
+library(reshape2)
+library(survival)
+library(ggfortify)
+raw1 <- "
+76
+93
+97
+107
+108
+113
+114
+119
+136
+137
+138
+139
+152
+154
+154
+160
+164
+164
+166
+168
+178
+179
+181
+181
+183
+185
+194
+198
+212
+213
+216
+220
+225
+225
+244
+253
+256
+259
+265
+268
+268
+270
+283
+289
+291
+311
+315
+326
+326
+361
+373
+373
+376
+397
+398
+406
+452
+466
+592
+598
+"
+
+raw2 <- "
+72
+72
+78
+83
+85
+99
+99
+110
+113
+113
+114
+114
+118
+119
+123
+124
+131
+133
+135
+137
+140
+142
+144
+145
+154
+156
+157
+162
+162
+164
+165
+167
+171
+176
+177
+181
+182
+187
+192
+196
+211
+214
+216
+216
+218
+228
+238
+242
+248
+256
+257
+262
+264
+267
+267
+270
+286
+303
+309
+324
+326
+334
+335
+358
+409
+473
+550
+"
+
+raw3 <- "
+10
+33
+44
+56
+59
+72
+74
+77
+92
+93
+96
+100
+100
+102
+105
+107
+107
+108
+108
+108
+109
+112
+113
+115
+116
+120
+121
+122
+122
+124
+130
+134
+136
+139
+144
+146
+153
+159
+160
+163
+163
+168
+171
+172
+176
+183
+195
+196
+197
+202
+213
+215
+216
+222
+230
+231
+240
+245
+251
+253
+254
+254
+278
+293
+327
+342
+347
+361
+402
+432
+458
+555
+"
+
+raw4 <- "
+43
+45
+53
+56
+56
+57
+58
+66
+67
+73
+74
+79
+80
+80
+81
+81
+81
+82
+83
+83
+84
+88
+89
+91
+91
+92
+92
+97
+99
+99
+100
+100
+101
+102
+102
+102
+103
+104
+107
+108
+109
+113
+114
+118
+121
+123
+126
+128
+137
+138
+139
+144
+145
+147
+156
+162
+174
+178
+179
+184
+191
+198
+211
+214
+243
+249
+329
+380
+403
+511
+522
+598
+"
+
+raw5 <- "
+12
+15
+22
+24
+24
+32
+32
+33
+34
+38
+38
+43
+44
+48
+52
+53
+54
+54
+55
+56
+57
+58
+58
+59
+60
+60
+60
+60
+61
+62
+63
+65
+65
+67
+68
+70
+70
+72
+73
+75
+76
+76
+81
+83
+84
+85
+87
+91
+95
+96
+98
+99
+109
+110
+121
+127
+129
+131
+143
+146
+146
+175
+175
+211
+233
+258
+258
+263
+297
+341
+341
+376
+"
+
+rawcontrol <- "
+18
+36
+50
+52
+86
+87
+89
+91
+102
+105
+114
+114
+115
+118
+119
+120
+149
+160
+165
+166
+167
+167
+173
+178
+189
+209
+212
+216
+273
+278
+279
+292
+341
+355
+367
+380
+382
+421
+421
+432
+446
+455
+463
+474
+506
+515
+546
+559
+576
+590
+603
+607
+608
+621
+634
+634
+637
+638
+641
+650
+663
+665
+688
+725
+735
+"
+
+guinea.pig <- data.frame(control=c(read.table(text=rawcontrol)$V1, rep(NA, 7)),
+                         dose1=c(read.table(text=raw1)$V1, rep(NA, 12)),
+                         dose2=c(read.table(text=raw2)$V1, rep(NA, 5)),
+                         dose3=read.table(text=raw3)$V1,
+                         dose4=read.table(text=raw4)$V1,
+                         dose5=read.table(text=raw5)$V1
+                         )
+# Alternative: use scan to read in a column of text as a vector
+
+guinea.pig <- melt(guinea.pig, variable.name="category", value.name="lifetimes")
+guinea.surv <- survfit(Surv(lifetimes) ~ category, data = guinea.pig)
+autoplot(object=guinea.surv, conf.int=FALSE)
+
+ggplot(data=guinea.pig, aes(x=lifetimes,color=category)) + stat_ecdf(geom="step")
+```
+
+
+A survival function can be used to calculate the hazard function, which may be interpreted as the instantaneous death rate for individuals who have suvived up to a given time.
+
+For small $\delta$, we calculate the probability that the individual will die in the time interval $(t,t+\delta)$
+$$
+\begin{aligned}
+P(t\leq T \leq t + \delta | T>t) &= \frac{P(t \leq T \leq t+\delta)}{P(T>t)} \\
+                                 &= \frac{F(t+\delta)-F(t)}{1-F(t)} \\
+                                 &\approx \frac{\delta f(t)}{1-F(t)}
+\end{aligned}
+$$
+The hazard rate function is defined as $h(t)=\frac{f(t)}{1-F(t)}$ and alternatively expressed as
+$$h(t)=-\frac{d}{dt}\log(1-F(t)) = -\frac{d}{dt}\log(s(t))$$  
+
+**Example**  
+In R, plot the hazard rate function for the Weibull with $\alpha=1$ and $\beta=0.8,1.0,1.5$
+```{r}
+x <- seq(0,2,length=1000)
+plot(x,dweibull(x,0.8,1)/(1-pweibull(x,0.8,1)), type='l',ylab='')
+lines(x,dweibull(x,1,1)/(1-pweibull(x,1,1)),col='red')
+lines(x,dweibull(x,1.5,1)/(1-pweibull(x,1.5,1)),col='green')
+```
+
+**Problem**  
+Find the hazard rate function for exponentially distributed lifetimes.  What does this tell you?  
+$$
+\begin{aligned}
+h(t) &= \frac{f(t)}{1-F(t)} \\
+     &= \frac{\lambda e^{-\lambda t}}{1-(1-e^{-\lambda t})} \\
+     &= \lambda
+\end{aligned}
+$$
+
+**Density Estimation**  
+The glaring issue with using the ecdf as an estimator of $F$ arises when $F$ is continuous (since the ecdf is always a step function).
+
+In this situation, one way of deriving a smoothed estimate is using the kernel probability density estimate.  
+
+The idea is to use $w(x)$, where this function is a nonnegative, symmetric weight function, centered at zero and integrates to 1 (pdf).  
+
+**January 11, 2015**  
+This $w$ uses the $X_i$ to come up with a smoothed estimate at $x$.  
+
+However, we may not want to use values of $X_i$ that are too far from $X_j$ since those values won't tell us much about the distribution at $x$.  
+
+Even for those values not too far away from $x$, we would want to weight values closest to $x$ more than those that are further away.  
+
+Therefore, we need to decide on a bandwidth, $h$, and run this smoother in this bandwidth around $x$, on the known support $X$.
+
+The choice of $h$ can have a profound effect on the quality of the density estimate.  
+
+The choice of $h$ is problem specific.
+
+We can write this weight function as
+$$W_h(x) = \frac{1}{h}w\bigg(\frac{x}{h}\bigg)$$
+giving our estimate of $f$,
+$$
+\begin{aligned}
+f_h(x) &= \frac{1}{n}\sum_{i=1}^n W_h(x-X_i) \\
+  &= \frac{1}{nh}\sum_{i=1}^n w\bigg(\frac{x-X_i}{h}\bigg)
+\end{aligned}
+$$
+If $h$ is too small we will have undersmoothing, producing a rough $f$, not much different than the unsmoothed.
+
+If $h$ is too large, then we will have oversmoothing, possibly losing out on some features of the true $f$.  
+
+```{r}
+n <- 100
+x <- rchisq(n,8)
+#h <- 1
+h <- c(0.5, 1, 5)
+t <- seq(0,25, length=n)
+fhat1 <- matrix(0, nrow=n, ncol=length(h))
+
+plot(t, dchisq(t,8), type='l')
+
+for (j in 1:length(h)){
+  for (i in 1:n){
+		fhat1[i,j] = 1/(n*h[j])*sum(dnorm((t[i]-x)/h[j]))
+		}
+	lines(t, fhat1[,j], xlab='x', ylab='', col=j+1)
+	}
+	
+```
+
+Alternatively, we could use the `KernSmooth` library to accomplish the same thing.
+```{r eval=FALSE}
+# Alternatively
+
+plot(density(x))
+
+# or 
+
+library(KernSmooth)
+
+fhat3 <- bkde(x)
+plot(fhat3, xlab='x', ylab='',type='l')
+lines(t, dchisq(t,8), col='red')
+```
+
+
+
+**Nonparametric Bootstrap**  
+Let $x_i,x_2,...,x_n$ be our sample.  
+
+A bootstrap sample is a SRS of $n$ observations, taken with replacement, from the original sample, say $x^*_1,x^*_2,...,x^*_n$.  
+
+Repeat this process a large number of times, $B$.  
+
+For each sample, calculate the statistic of interest.  
+
+The behavior of the statistic from bootstrap sample to bootstrap sample should be similar to the behavior of that statistic from sample to sample (sample distribution).  
+
+For a given bootstrap sample, $x_i$ is represented $r_i$ times.  
+
+Therefore, $\sum_{i=1}^n r_i=n$ and $r_i \sim \text{bin}\big(n, \frac{1}{n}\big)$.
+
+The mean and variance of $r_i$ can be determined by the standard formulas for the binomial distribution.
+$$E_B(r_i)= np = n\cdot\frac{1}{n}=1$$
+$$\text{Var}_B(r_i) = \frac{p(1-p)}{n}= \frac{\frac{1}{n}\big(1-\frac{1}{n}\big)}{n}=\frac{\frac{1}{n}\big(\frac{n-1}{n}\big)}{n} = \frac{n-1}{n}$$
+For $i\neq j, \ \text{Cov}(r_i,r_j)=\sigma_{ij}=-\frac{1}{n}$.  
+This implies $E_B(\sigma_i,\sigma_j)=1-\frac{1}{n}$.  
+Note: $r_i$'s are not independent b/c of the constraint $\sum_{i=1}^n r_i=n$.  If we knew, say, $r_1=5$, then we have some information about the distribution of the rest of the $r_i$'s.
+
+Derivation of $\text{Cov}(r_i,r_j)$: We can determine this by setting $\text{Var}_B\big(\sum_{i=1}^n r_i\big)$ to 0 since $\text{Var}_B\big(\sum_{i=1}^n r_i\big)=\text{Var}_B(n)$, where $n$ is a constant and the variance of a constant is zero. 
+$$
+\begin{aligned}
+0 &= \text{Var}_B\bigg(\sum_{i=1}^n r_i\bigg) \\
+  &= \sum_{i=1}^n \text{Var}_B(r_i) + \sum_{i=1}^n \sum_{j \neq i} \text{Cov}_B(r_i,r_j) \\
+  &= n\bigg(\frac{n-1}{n}\bigg)+n(n-1)\sigma_{ij} && \text{b/c} \ \text{Cov}_B(r_i,r_j)=\sigma_{ij} \\
+  &= (n-1)+n\sigma_{ij}(n-1) \\
+  &= 1+n\sigma_{ij} && \text{dividing equation by} \ (n-1) \\
+-n\sigma_{ij} &= 1 \\
+\sigma_{ij} &= -\frac{1}{n}
+\end{aligned}
+$$
+
+**Example**  
+In the following code, we generate 40 trials, each with 10 observations and success rate of 0.3.  From that pool of data, we sample from it to generate a binomial trial.  From each trial we calculate the standard deviation.  We do this 10,000 times and plot a histogram of our simulations.
+
+```{r fig.width=5, fig.height=4}
+x <- rbinom(n=40, size=10, prob=0.3)
+sdstar <- numeric(length=10000)
+for (i in 1:10000) {
+  sdstar[i] <- sd(sample(x=x, size=40, replace=TRUE))
+}
+hist(sdstar)
+```
+
+The distribution appears normal.
+
+**January 13, 2016**  
+**Mean**  
+The sample mean of a bootstrap sample is 
+$$\overline{X}^*=\frac{1}{n}\sum_{i=1}^nr_ix_i$$
+where $r_i$ is the number of observed values at $x_i$, and $x_i$ is treated as fixed.  
+
+So, because $E_B(r_i)=1 \ \Big(\sum_{i=1}^n r_i=n$ and $r_i \sim \text{bin}\big(n, \frac{1}{n}\big)\Big)$, 
+$$
+\begin{aligned}
+E_B\Big(\overline{X}^*\Big) &= E\bigg(\frac{1}{n}\sum_{i=1}^n r_ix_i\bigg) \\
+  &= \frac{1}{n}\sum_{i=1}^n E_B(r_i)x_i \\
+  &= \frac{1}{n}\sum_{i=1}^n x_i\cdot 1 \\
+  &= \overline{x}
+\end{aligned}
+$$
+and, because $\text{Cov}(x_i,x_j)=\frac{1}{n}$,
+$$
+\begin{aligned}
+\text{Var}_B\Big(\overline{X}^*\Big) &=\frac{1}{n^2}\sum_{i=1}^nx^2_i\text{Var}_B(r_i)+\frac{1}{n^2}\sum_{i=j}^n\sum_{j\neq i} \text{Cov}(r_ix_i,r_jx_j) \\
+  &= \frac{1}{n^2}\bigg[\sum_{i=1}^n x^2_i \bigg(\frac{n-1}{n}\bigg) + \sum_{i=1}^n\sum_{j \neq i}x_ix_j\bigg(-\frac{1}{n}\bigg)\bigg] \\
+    &= \frac{n-1}{n^2}s^{*2}
+\end{aligned}
+$$
+where 
+$$s^{*2}=\frac{\frac{n-1}{n}\sum_{i=1}^n x_i^2 -\frac{1}{n} \sum_{i=1}^n\sum_{j \neq i}x_i x_j}{n-1}$$
+Then the expected value is
+$$
+\begin{aligned}
+E\Big[E_B\Big(\overline{X}^*\Big)\Big] &= E\Big(\overline{X}\Big) \\
+  &=\mu
+\end{aligned}
+$$
+which is unbiased.
+
+The expeced value of $s^{*2}$
+$$
+\begin{aligned}
+E\big(s^{*2}\big) &= E\Bigg[\frac{\frac{n-1}{n}\sum_{i=1}^n x_i^2 -\frac{1}{n} \sum_{i=1}^n\sum_{j \neq i}x_i x_j}{n-1}\Bigg] \\
+  &= \frac{\frac{n-1}{n}\sum_{i=1}^n E(x_i^2) -\frac{1}{n} \sum_{i=1}^n\sum_{j \neq i}E(x_i x_j)}{n-1} \\
+  &= \frac{\frac{n-1}{n}\sum_{i=1}^n (\sigma^2 + \mu^2) -\frac{1}{n} \sum_{i=1}^n\sum_{j \neq i}E(x_i)E(x_j)}{n-1} \\
+  &= \sigma^2
+\end{aligned}
+$$
+Note that $E(x_i x_j)=E(x_i)E(x_j)$ because of independence.
+
+So $$E\Big[\text{Var}_B\Big(\overline{X}^*\Big)\Big]=\frac{n-1}{n^2}\sigma^2$$
+Therefore the bias is $$\text{bias}_{\sigma^2_{\overline{X}^*}}=-\frac{1}{n^2}\sigma^2$$
+
+**Example**  Compare CIs for the median and mean using bootstrap and classical methods assuming normality.  
+```{r}
+x <- rnorm(40, 12, 2)
+medstar <- numeric(100000)
+for (i in 1:10000) {medstar[i] <- median(sample(x, replace=TRUE))}
+hist(medstar, freq=FALSE)
+quantile(medstar, c(0.025, 0.975))
+# we can do the following b/c of the histogram appears normal
+median(x) + c(-1.96, 1.96)*sd(medstar) # semiparamtric
+# In STAT 6304 we would do:
+median(x) + c(qt(0.025, 39), qt(0.975, 39))*sd(x)/40
+```
+Use the bootstrap method if you cannot assume normality and the sample size is too small.
+
+Using `boot` library
+```{r}
+library(boot)
+fun.data <- function(w,i){median(x[i])}
+y <- boot(x, fun.data, 1000)
+boot.ci(y)
+```
+
+**Example** Suppose the population is exponential so that
+$$f(x;\lambda)=\lambda e^{-\lambda x}$$
+Create a 95% CI for the population median
+$$
+\begin{aligned}
+  & F(t) = 0.5 \\
+\Leftrightarrow  & 1-e^{-\lambda t} = 0.5 \\
+\Leftrightarrow  & e^{-\lambda t} = 0.5 \\
+\Leftrightarrow  & -\lambda t = \ln(0.5) \\
+\Leftrightarrow  & t = -\frac{1}{\lambda}\ln(0.5)
+\end{aligned}
+$$
+
+```{r eval=FALSE}
+# Doesn't seem to work
+q <- rexp(250, rate=17)
+1/17*log(.5)
+y <- boot(q, fun.data, 100000)
+boot.ci(y)
+```
+
+**January 20, 2016**  
+A different way of looking at something we've already seen.  
+
+Suppose we have data generated as realizations of a random variable from a particular distribution parameterized by $\theta$.  
+
+In addition, suppose we believe that there are only two possible values for $\theta$, say $\theta_1$ and $\theta_2$.  How do you decide which of these is the true $\theta$?  
+
+From last quarter, we could calculate the likelihood of our data under both values of $\theta$, and select the one that has the larger likelihood.  
+
+What we will do now is to take the ratio of those likelihood functions evaluated at the two $\theta$s and make our decision based on the value of this ratio.
+
+**Example**  Suppose two siblings have identical phones.  The only observable difference is that the older one gets, on average, one text per hour whereas the younger gets, on average, 1.5 texts per hour.  In a rush to get to school, you see both phones next to each other and decide to take one of the phones.  After having the phone for 8 hours, how should you decide whose phone you took?  
+
+Let $x$ denote the number of texts that arrive in 8 hours.  We have a Poisson distribution - we are given a rate and finite period of time.
+
+Recall the Poisson pmf:
+\[f(X=x)=\frac{\lambda^x e^{-\lambda}}{x!}\]
+
+To get an idea about the distributions:
+```{r fig.width=4, fig.height=3}
+x <- 0:15 # considering probabilities for each of these counts
+plot(x, dpois(x=x, lambda=8), type='h') # older child's phone
+plot(x, dpois(x=x, lambda=12), type='h') #younger child's phone
+```
+
+Suppose we observed 9 text messages.
+
+Poisson pmf: $f(X=x)=\frac{\lambda^x e^{-\lambda}}{x!}$  
+Likelihood:
+\[
+\begin{aligned}
+\frac{P_{younger}(x=9)}{P_{older}(x=9)} &= \frac{\frac{12^9e^{-12}}{9!}}{\frac{8^9e^{-8}}{9!}} \\
+  &= \frac{`r dpois(x=9, lambda=12)`}{`r dpois(x=9, lambda=8)`} \\
+  &= 0.704
+\end{aligned}
+\]
+This is the likelihood ratio, so the younger sibling's phone is less likely to produce exactly 9 texts in 8 hours.  
+
+On the other hand, if we had observed 11 texts, then 
+$$\frac{P_{younger}(x=11)}{P_{older}(x=11)}$$
+which means the younger sibling's phone is 1.58 times more likely to produce 11 texts in 8 hours.
+
+When we have one hypothesis for each phone, $H_0$ and $H_1$, we have what is known as a **simple hypothesis**.  
+
+
+To incorporate a Bayesian framework, we can specify a prior as to the probability of these hypotheses, $P(H_0)$ and $P(H_1)$, before observing the data.  
+
+If we have no information, then
+$$P(H_0)=P(H_1)=\frac{1}{2}$$
+We can look at the ratio of posteriors where
+$$P(H_0|x)=\frac{P(H_0,x)}{P(x)}=\frac{P(x|H_0)P(H_0)}{P(x)}$$
+and likewise for $H_1$,
+$$P(H_1|x)=\frac{P(x|H_1)P(H_1)}{P(x)}$$
+we then have the ratio
+$$\frac{P(H_0|x)}{P(H_1|x)}=\frac{P(x|H_0)}{P(x|H_1)}\frac{P(H_0)}{P(H_1)}$$
+
+Suppose in our example that $H_0$ represents the belief that the phone belongs to the younger child.  Without prior probabilities:
+\[
+\begin{aligned}
+\frac{P(H_0|x)}{P(H_1|x)} &=\frac{P(x|H_0)}{P(x|H_1)}\frac{P(H_0)}{P(H_1)} \\
+  &= \frac{\frac{12^x e^{-12}}{x!}}{\frac{8^x e^{-8}}{x!}}\frac{\frac{1}{2}}{\frac{1}{2}}
+\end{aligned}
+\]
+```{r echo=FALSE}
+x <- 0:15
+ratio <- round(dpois(x=x,lambda=12)/dpois(x=x,lambda=8), 2)
+```
+
+We can calculate the ratios at each value of $x$:
+
+ x | 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 | 12 | 13 | 14 | 15
+---|---|---|---|---|---|---|---|---|---|---|----|----|----|----|----|----
+$\frac{P(H_0|x)}{P(H_1|x)}$|`r ratio[1]`|`r ratio[2]`|`r ratio[3]`|`r ratio[4]`|`r ratio[5]`|`r ratio[6]`|`r ratio[7]`|`r ratio[8]`|`r ratio[9]`|`r ratio[10]`|`r ratio[11]`|`r ratio[12]`|`r ratio[13]`|`r ratio[14]`|`r ratio[15]`|`r ratio[16]`  
+
+```{r fig.width=4, fig.height=3}
+x <- 0:15
+plot(x=x, y=dpois(x=x,lambda=12)/dpois(x=x,lambda=8))
+abline(h=1)
+```
+
+The horizontal line at $\frac{P(H_0|x)}{P(H_1|x)}=1$ represents the break even point. At 1, we have equal probabilities.  Values less than 1 favor the alternative hypothesis.  
+
+Note that the graph is nonlinear and is a monotonically increasing function of $x$.  As $x$ increases, the likelihood increasingly favors the null hypothesis.  The points are not connected because $x$ is not continuous (you cannot have 5.5 texts).
+
+Interpretation: If $x<10$, it is more likely that the older sibling's phone.
+
+Now suppose that we believe that there was a one-third probability that we chose the younger child's phone (H_0).  Then if we were calculating Bayesian probabilities:
+\[
+\begin{aligned}
+\frac{P(H_0|x)}{P(H_1|x)} &=\frac{P(x|H_0)}{P(x|H_1)}\frac{P(H_0)}{P(H_1)} \\
+  &= \frac{\frac{12^x e^{-12}}{x!}}{\frac{8^x e^{-8}}{x!}}\frac{\frac{1}{3}}{\frac{2}{3}}
+\end{aligned}
+\]
+
+```{r echo=FALSE}
+ratio <- round(dpois(x=x, lambda=12)/dpois(x=x, lambda=8)*(1/3)/(2/3),2)
+```
+
+
+ x | 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 | 12 | 13 | 14 | 15
+---|---|---|---|---|---|---|---|---|---|---|----|----|----|----|----|----
+$\frac{P(H_0|x)}{P(H_1|x)}\frac{P(H_0)}{P(H_1)}$|`r ratio[1]`|`r ratio[2]`|`r ratio[3]`|`r ratio[4]`|`r ratio[5]`|`r ratio[6]`|`r ratio[7]`|`r ratio[8]`|`r ratio[9]`|`r ratio[10]`|`r ratio[11]`|`r ratio[12]`|`r ratio[13]`|`r ratio[14]`|`r ratio[15]`|`r ratio[16]`
+
+
+```{r echo=3:6, fig.width=10, warning=FALSE}
+default <- par()
+par(mfrow=c(1,2))
+x <- 0:15
+plot(x=x, y=dpois(x=x, lambda=12)/dpois(x=x, lambda=8)*(1/3)/(2/3), 
+     main="Likelihood Ratios with Bayesian Probabilities",
+     xlab="Number of Texts", ylab="Likelihood Ratio", pch=3)
+abline(h=1)
+plot(x=x, y=dpois(x=x, lambda=12)/dpois(x=x, lambda=8)*(1/3)/(2/3),
+     main="Likelihood Ratios of Bayesian and Frequentist Prob",
+     xlab="Number of Texts", ylab="Likelihood Ratio", pch=3)
+points(x=x, y=dpois(x=x, lambda=12)/dpois(x=x, lambda=8))
+par(default)
+```
+
+The Bayesian ratio has a more gradual rise because $P(H_0)<0.5$.
+
+We choose $H_0$ if
+$$\frac{P(H_0|x)}{P(H_1|x)} = \frac{P(x|H_0)}{P(x|H_1)}\frac{P(H_0)}{P(H_1)} > 1$$
+We can re-arrange the inequality to arrive at an equivalent expression
+\[
+\begin{aligned}
+\frac{P(H_0|x)}{P(H_1|x)} = \frac{P(x|H_0)}{P(x|H_1)}\frac{P(H_0)}{P(H_1)} &> 1 \\
+\frac{P(x|H_0)}{P(x|H_1)}  &> 1 \cdot \frac{P(H_1)}{P(H_0)} = c
+\end{aligned}
+\]
+
+**Making Errors**  
+In our previous example, we considered the situation where $c=1$ (in other words, a flat prior).  We concluded that our null hypothesis, $H_0$ (the younger child), is accepted as long as $x \geq 10$.  If the phone received 10 or more texts in the 8 hour period, then it is more likely that we have the younger child's phone.
+
+The cdf tells us the probabilities   
+$P_{younger}(X \geq 10)=`r ppois(q=9, lambda=12, lower.tail=FALSE)`$  
+$P_{younger}(X < 10)=`r ppois(q=9,lambda=12)`$  
+$P_{younger}(X < 10) + P_{younger}(X \geq 10) = 1$  
+$P_{older}(X \geq 10)=`r ppois(q=9, lambda=8, lower.tail=FALSE)`$  
+$P_{older}(X < 10)=`r ppois(q=9,lambda=8)`$  
+$P_{older}(X < 10) + P_{older}(X \geq 10) = 1$  
+
+The two possible errors are:
+
+1) Type I: Reject $H_0$ when it is true.
+2) Type II: Accept $H_0$ when it is false.
+
+**Example**  If $c=1$, what are the probabilities of making an error in our conclusion?
+
+Type I Error (wrongly rejecting $H_0$): If the phone had fewer than 10 texts, our model indicates that we have the older child's phone.  But in reality, the phone belongs to the younger child. 
+
+To calculate the probability of this error, we use the younger child's cdf to find the total probability of when a phone with fewer than 10 texts is actually the younger child's phone.
+$$
+\begin{aligned}
+P(\text{Reject} \ H_0|H_0) &= P(X < 10 |H_0) \\
+  &=`r ppois(9,12)`
+\end{aligned}
+$$
+
+Type II Error (wrongly accepting $H_0$): If the phone had 10 or more texts, we would conclude that we had the younger child's phone.  But in reality, the phone belongs to the older child. 
+
+To calculate the probability of this error, we use the older child's cdf to find the total probability of when a phone with 10 or more texts is actually the older child's phone.
+
+$$
+\begin{aligned}
+P(\text{Accept} \ H_0|H_1) &= P(X \geq 10 | H_1) \\
+  &= `r 1-ppois(9,8)`
+\end{aligned}
+$$
+
+It helps to think about this issue by telling yourself: the answer is either $H_0$ or $H_1$.  If it is $H_0$, then we are dealing with $H_0$'s cdf.  To calculate the error, we figure out what is the cumulative probability of the less likely situation.  The probability of this error has nothing to do with the actual data.  We have determined the threshold where we change from one conclusion to another.  In this case, we determined the threshold is between 9 and 10 texts.
+
+
+
+**Example**  Now suppose $c=2$, meaning
+$$\frac{P(H_0)}{P(H_1)}=\frac{1}{2}$$
+
+So $P(H_0)=\frac{1}{3}$ and $P(H_1)=\frac{2}{3}$.
+
+Our calculations showed that the threshold shifted to between 11 and 12 texts.
+
+Type I Error (wrongly rejecting $H_0$): The phone has fewer than 12 texts, we conclude that it is the older child's phone, but we are wrong.  Use $H_0$'s (younger child) cdf:
+$$
+\begin{aligned}
+P(\text{Reject} \ H_0|H_0) &= P(X < 12|H_0) \\
+  &=0.462
+\end{aligned}
+$$
+Type II Error (wrongly accepting $H_0$): The phone has 12 or more texts, we conclude that is the younger child's phone, but we are wrong.
+$$
+\begin{aligned}
+P(\text{Accept} \ H_0|H_1) &= P(X \geq 12 |H_1) \\
+  &= 0.112
+\end{aligned}
+$$
+
+###Neyman-Pearson Paradigm  
+A non-Bayesian approach to decision-making focusing on the previously described errors rather than prior probabilities.  
+
+We have two hypotheses, the null hypothesis, $H_0$, and the alternative hypothesis, $H_1$ or $H_A$.
+
+Review of familiar terms:
+
+- Rejecting $H_0$ when it is true is type I error.  
+- The probability of type I error is called the level of significance, and is denoted $\alpha$.
+- Failing to reject (meaning, accepting) the null hypothesis when it is false is a type II error with probability $\beta$.  
+- The probability of correctly rejecting $H_0$ is called power with probability $1-\beta$.
+- The function of the data used to make our decision is called the test statistic.  
+- The set of values of the test statistic is called the rejection region (all other values comprise the acceptance region).
+- The distribution of the test statistic when $H_0$ is true is the null distribution.  
+
+Formally, simple hypotheses are ones in which the data follow one of two possible joint distributions, each of these specified by one of these hypotheses.  
+
+**Lemma (Neyman-Pearson)**  Suppose that $H_0$ and $H_1$ are simple hypotheses and the test that rejects $H_0$ whenever the likelihood ratio is less than $c$ has significance level $\alpha$.  Then any other test for which the significance level is less than or equal to $\alpha$ has power less than or equal to the likelihood ratio test.  
+
+In this sense, the likelihood ratio test is most powerful.
+
+**January 25, 2016**    
+**Neyman-Pearson Proof**  
+Suppose that $\mathbf{X}=(X_1, \dots X_n)$ have joint density or mass function $f(x)$ where $f$ is one of $f_0$ or $f_1$ and we test 
+\[H_0:f=f_0 \ \text{vs.} \ H_1:f=f_1\]
+We will choose only one of these hypotheses, so our decision function, $d(\mathbf{X})$, is actually a Bernoulli random variable taking on a value of $0$ if we accept $H_0$ and 1 otherwise.
+
+Consider our likelihood ratio test.  We have
+\[d(\mathbf{x})=
+\begin{cases}
+1, \ \text{if} \ f_0(\mathbf{x}) < cf_1(\mathbf{x}) \\
+0, \ \text{otherwise}
+\end{cases}
+\]
+for some positive $c$.
+
+Note that we have rearranged the condition of $d(\mathbf{x})=1$ from what we had already seen:
+\[
+\frac{f_0(\mathbf{x})}{f_1(\mathbf{x})} < c \Rightarrow f_0(\mathbf{x}) < cf_1(\mathbf{x})
+\]
+
+Clearly, in regard to the null hypothesis,
+\[
+E_0[d(\mathbf{x})]=P_0(d(\mathbf{x})=1)=\alpha
+\]
+which is the probability of type I error, whereas for the alternative hypothesis,
+\[
+\begin{aligned}
+E_1[d(\mathbf{x})] &= P_1(d(\mathbf{x})=1) \\
+  &= 1 - \beta
+\end{aligned}
+\]
+It suffices to show that if $d^*(\mathbf{x})$ is the decision function of another test with $0 \leq d^*(\mathbf{x}) \leq 1$ and
+\[
+E_0[d^*(\mathbf{x})] \leq E_0[d(\mathbf{x})] = \alpha
+\]
+then
+\[
+E_1[d^*(\mathbf{x})] \leq E_1[d(\mathbf{x})]
+\]
+where $E_1[d(\mathbf{x})]$ is our power, so we are making a direct comparison of power.
+
+First note that
+\[
+cf_1(\mathbf{x})-f_0(\mathbf{x})
+\begin{cases}
+  &> 0, d(\mathbf{x})=1 \\
+  &\leq 0, d(\mathbf{x})=0
+\end{cases}
+\]
+Thus,
+\[
+d^*(\mathbf{x})[cf_1(\mathbf{x})-f_0(\mathbf{x})] \leq d(\mathbf{x})[cf_1(\mathbf{x})-f_0(\mathbf{x})]
+\]
+and so,
+\[
+\int \cdots \int d^*(\mathbf{x})[cf_1(\mathbf{x}) - f_0(\mathbf{x})]d\mathbf{x} \leq \int \cdots \int d(\mathbf{x})[cf_1(\mathbf{x})-f_0(\mathbf{x})]d\mathbf{x}
+\]
+we can re-arrange the terms
+\[
+c\int \cdots \int [d^*(\mathbf{x})-d(\mathbf{x})]f_1(\mathbf{x})d\mathbf{x} \leq \int \cdots \int [d^*(\mathbf{x})-d(\mathbf{x})]f_0(\mathbf{x})d\mathbf{x}
+\]
+Note that the above could be sums instead of integrals in the discrete case.
+
+The left-hand side is simply $cE_1[d^*(\mathbf{x})-d(\mathbf{x})]$ or $c\Big(E_1[d^*(\mathbf{x})]-E_1[d(\mathbf{x})]\Big)$
+
+and the right-hand side is $E_0[d^*(\mathbf{x})] - E_0[d(\mathbf{x})]$.
+
+Since $E_0[d^*(\mathbf{x})] \leq E_0[d(\mathbf{x})]$ it follows that $E_1[d^*(\mathbf{x})] \leq E_1[d(\mathbf{x})]$
+
+We have thus finished our proof.
+
+The Neyman-Pearson Lemma as stated does not guarantee the existence of a most powerful test ($\alpha$-level) but merely states that the test that rejects $H_0$ for $\frac{f_0(\mathbf{x})}{f_1(\mathbf{x})}<c$ will be a most powerful test for some level $\alpha$ (but not necessarily for all $\alpha$).
+
+Moreover, the Neyman-Pearson Lemma does not guarantee the uniqueness a most powerful test.  In fact, there may be many test functions having the same power as the most powerful test function under the Neyman-Pearson Lemma.  
+
+**Example**  A random sample of size $n$ drawn from an exponential population is used to test the null hypothesis $\theta=\theta_0$ against the alternative hypothesis $\theta=\theta_1>\theta_0$.  Find the most powerful critical region of size $\alpha$.  
+
+**Solution**  The likelihood ratio is
+\[
+\begin{aligned}
+T(\mathbf{x}) &= \frac{f_0(\mathbf{x})}{f_1(\mathbf{x})} \\
+  &= \frac{f_0(X_1)f_0(X_2)\dots f_0(X_n)}{f_1(X_1)f_1(X_2)\dots f_1(X_n)} \\
+  &= \frac{\frac{1}{\theta_0^n}\exp\bigg[-\frac{1}{\theta_0}\sum_{i=1}^n x_i \bigg]}{\frac{1}{\theta_1^n}\exp\bigg[-\frac{1}{\theta_1}\sum_{i=1}^n x_i \bigg]} \\
+  &= \bigg(\frac{\theta_1}{\theta_0}\bigg)^n\exp\bigg[-\frac{1}{\theta_0}\bigg(\sum_{i=1}^n x_i\bigg) -\frac{1}{\theta_1}\sum_{i=1}^n x_i \bigg] \\
+  &= \bigg(\frac{\theta_1}{\theta_0}\bigg)^n\exp\bigg[-\bigg(\frac{1}{\theta_0}-\frac{1}{\theta_1}\bigg)\sum_{i=1}^n x_i\bigg]
+\end{aligned}
+\]
+Notice that the likelihood ratio is monotonically decreasing as $\sum_{i=1}^n x_i$ increases (we know because $\theta_1 > \theta_0 \Rightarrow -(\theta_0^{-1}-\theta_1^{-1})<0$).  Here, we will reject if $\sum_{i=1}^n x_i > k$.
+
+We know that the sum of exponential i.i.d. random variables is a gamma-distributed random variable.
+
+Thus, if $H_0$ is true, $\sum_{i=1}^n x_i \sim \text{Gamma}(n, \theta_0)$, for specified $\alpha$, $k$ is the $(1-\alpha)^{th}$ quantile of this gamma distribution, say $\pi_{\alpha}$.
+
+The Neyman-Pearson Lemma tells us that the most powerful test rejects for $\sum_{i=1}^n x_i > k$, where $k=\pi_{\alpha}$, \[\alpha=P_{\theta_0}\bigg[\sum_{i=1}^n x_i > k\bigg]\]
+and the power of the test is 
+\[P_{\theta_1}\bigg[\sum_{i=1}^n x_i > k\bigg]\]
+
+**Example** Using the findings from above, let $\alpha=0.05$, $H_0: \theta_0 = 3$, $H_1: \theta_1=10$, and $n=20$.
+```{r fig.height=4, fig.width=5}
+k <- qgamma(p=0.95, shape=20, scale=3) # gives us k
+1-pgamma(q=k, shape=20, scale=10) # power of test
+sum.x <- 1:300
+H_0 <- dgamma(x=sum.x, shape=20, scale=3) # null hypothesis
+H_1 <- dgamma(x=sum.x, shape=20, scale=10) # alt hypothesis
+plot(x=sum.x, y=H_0, type='l')
+lines(x=sum.x, y=H_1, col='red')
+# represents critical value
+abline(v=k, col='blue')
+# alpha is area under black curve that is to the right of the vertical line
+# power is the area to the right of the blue line under the red curve
+```
+
+Some variables that affect power:
+
+- The significance level chosen ($\alpha$).
+- The sample size, $n$.  
+- The difference between the two hypotheses, $\theta_0$ and $\theta_1$.  
+
+The power in this example is extremely large due to the difference in hypotheses.
+
+If we set $H_1: \theta_1=5$
+```{r fig.height=4, fig.width=5}
+new.H_1 <- dgamma(x=sum.x, shape=20, scale=5)
+plot(x=sum.x, y=H_0, type='l')
+lines(x=sum.x, y=new.H_1, col='green')
+1-pgamma(q=k, shape=20, scale=5) # power of test with new alt hypothesis
+```
+
+```{r eval=FALSE, echo=FALSE}
+library(ggplot2)
+ggplot(data.frame(x = c(-5, 5)), aes(x)) + stat_function(fun = dnorm)
+x <- seq(from=0,to=1.5,by=0.01) 
+y <- dnorm(x)
+df <- data.frame(x=x, y=y)
+ggplot(data.frame(x = c(-5, 5)), aes(x)) +
+  #geom_vline(data=NULL, aes(xintercept=0.5),
+  #             linetype="solid", size=.5, colour="black") +
+  geom_segment(mapping=aes(x=0.5,y=0,xend=0.5,yend=.35), size=.5) +
+  layer(geom = "area", data=df, mapping = aes(x = ifelse(x>0.5 & x<1.5, x, 0)),
+          geom_params = list(fill="red", alpha = 0.5)) +
+  stat_function(fun = dnorm, args = list(mean = 0, sd = 1)) +
+  scale_y_continuous(limits = c(0, max(df$y)))
+
+
+x <- seq(from=0.5,to=1.5,by=0.01) 
+y <- dnorm(x)
+df <- data.frame(x=x, y=y)
+ggplot(data.frame(x = c(-5, 5)), aes(x)) + 
+  stat_function(fun = dnorm, args = list(mean = 0, sd = 1)) +
+  geom_segment(aes(x=0.5,y=0,xend=0.5,yend=.35)) +
+  geom_polygon(mapping=aes(x, y), data=df)
+
+###
+ids <- factor(c("1.1", "2.1", "1.2", "2.2", "1.3", "2.3"))
+values <- data.frame(
+  id = ids,
+  value = c(3, 3.1, 3.1, 3.2, 3.15, 3.5)
+)
+positions <- data.frame(
+  id = rep(ids, each = 4),
+  x = c(2, 1, 1.1, 2.2, 1, 0, 0.3, 1.1, 2.2, 1.1, 1.2, 2.5, 1.1, 0.3,
+  0.5, 1.2, 2.5, 1.2, 1.3, 2.7, 1.2, 0.5, 0.6, 1.3),
+  y = c(-0.5, 0, 1, 0.5, 0, 0.5, 1.5, 1, 0.5, 1, 2.1, 1.7, 1, 1.5,
+  2.2, 2.1, 1.7, 2.1, 3.2, 2.8, 2.1, 2.2, 3.3, 3.2)
+)
+# Currently we need to manually merge the two together
+datapoly <- merge(values, positions, by=c("id"))
+###
+
+
+x<-seq(0.0,0.1699,0.0001)  
+ytop<-dnorm(0.12,0.08,0.02)
+MyDF<-data.frame(x=x,y=dnorm(x,0.08,0.02))
+shade <- rbind(c(0.12,0), subset(MyDF, x > 0.12), c(MyDF[nrow(MyDF), "X"], 0))
+p <- qplot(x=MyDF$x,y=MyDF$y,geom="line") 
+p + geom_segment(aes(x=0.12,y=0,xend=0.12,yend=ytop)) +
+    geom_polygon(data = shade, aes(x, y))
+
+
+## Create data
+dat <- with(density(rnorm(100)), data.frame(x, y))
+## Color the area under the curve between -1.2 and 1.1
+ggplot(data = dat, mapping = aes(x = x, y = y)) +
+    layer(geom = "line") +
+    layer(geom = "area", mapping = aes(x = ifelse(x>-1.2 & x<1.1 , x, 0)),
+          geom_params = list(fill = "red", alpha = 0.5)) +
+    scale_y_continuous(limits = c(0, max(dat$y)))
+
+
+#' Draw Normal Distribution Density with an area shaded in.
+#'
+#' @param lb Lower bound of the shaded area. Use \code{-Inf} for a left tail.
+#' @param ub Upper bound of the shaded area. Use \code{Inf} for a right tail.
+#' @param mean Mean of the normal distribution
+#' @param sd Standard deviation of the normal distribution
+#' @param limits Lower and upper bounds on the x-axis of the area displayed.
+#' @return ggplot object.
+#' @examples
+#' # Standard normal with upper 2.5% tail shaded
+#' normal_prob_area_plot(2, Inf)
+#' # Standard normal with lower 2.5% tail shaded
+#' normal_prob_area_plot(-Inf, 2)
+#' # standard normal with middle 68% shaded.
+#' normal_prob_area_plot(-1, 1)
+normal_prob_area_plot <- function(lb, ub, mean = 0, sd = 1, limits = c(mean - 3 * sd, mean + 3 * sd)) {
+    x <- seq(limits[1], limits[2], length.out = 100)
+    xmin <- max(lb, limits[1])
+    xmax <- min(ub, limits[2])
+    areax <- seq(xmin, xmax, length.out = 100)
+    area <- data.frame(x = areax, ymin = 0, ymax = dnorm(areax, mean = mean, sd = sd))
+    (ggplot()
+     + geom_line(data.frame(x = x, y = dnorm(x, mean = mean, sd = sd)),
+                 mapping = aes(x = x, y = y))
+     + geom_ribbon(data = area, mapping = aes(x = x, ymin = ymin, ymax = ymax))
+     + scale_x_continuous(limits = limits))
+}
+
+normal_prob_area_plot(2, Inf)
+
+
+#stumbled upon, try using with airline data
+#b <- ggplot(mtcars, aes(wt, mpg)) + geom_point()
+#df <- data.frame(x1 = 2.62, x2 = 3.57, y1 = 21.0, y2 = 15.0)
+#b + geom_curve(aes(x = x1, y = y1, xend = x2, yend = y2, colour = "curve"), data = df, #curvature = -0.2) + geom_segment(aes(x = x1, y = y1, xend = x2, yend = y2, colour = "segment"), data = df)
+```
+
+**January 27, 2016**  
+**Problem**  Let $H_0: X_1,\dots, X_8 \sim \text{Poisson}(\lambda=2) \text{vs.} H_1: X_1,\dots ,X_8 \sim \text{Poisson}(\lambda=\frac{1}{2})$. Find the most powerful test.  
+**Solution**  
+\[
+\begin{aligned}
+\Lambda &= \frac{L(\lambda_0)}{L(\lambda_1)} \\
+  &= \frac{2^{\sum X_i}e^{-8(2)}}{\frac{1}{2}^{\sum X_i}e^{-12}} \\
+  &= 4^{\sum X_i}e^{-12}
+\end{aligned}
+\]
+The likelihood ratio is a monotonically increasing function of $\sum X_i$ as $\sum X_i$ increases.  That is to say that $H_0$ becomes increasingly probable as $\sum X_i$ increases.  So if the ratio is low, we are inclined to reject the null hypothesis.
+
+Since $\sum_{i=1}^8 X_i \sim \text{Pois}(8\lambda)$ then the $\alpha$-level most powerful test rejects when $\sum_{i=1}^8 < k$, where 
+\[P\bigg(\sum_{i=1}^8 X_i < k | \lambda=2\bigg)=\alpha\]
+What is the above equation saying?  We want the cumulative probability of the sum of $X_i$ variables is less than a specified $k$ such that the the probability is equal to $\alpha$.
+(If given $\alpha$, we can find $k$.)
+
+In our example $X_i$ are Poisson distributed.  The sum of them are also Poisson distributed where the new parameter is $n\lambda$.
+
+Let $\alpha=0.05$.  We had 8 samples, so our new parameter is $n\lambda = 16$.  We will find $k$ through trial and error.  Try $k=6$ (cumulative probability for 5 or fewer):
+```{r}
+ppois(q=5, lambda=16)
+```
+So the cumulative probability for total occurrences equaling 5 and below is `r ppois(q=5, lambda=16)`.  This is too small for $\alpha$.
+
+We can raise $\sum X_i$ to expand the rejection region so that $\alpha=0.05$.
+```{r}
+ppois(q=10, lambda=16)
+```
+$P(\sum X_i \leq 10)$ is too large for our $\alpha$ target.
+
+```{r}
+ppois(q=9, lambda=16)
+```
+Since Poisson deals with discrete values, this is the closest that we can have to satisfy our criteria $\alpha=0.05$ without exceeding our threshold.
+
+So when $k=10$, then $\alpha=0.0433$.
+
+Then our power is the probability that we will correctly reject the null hypothesis if the alternative hypothesis is true: 
+\[P\bigg(\sum_{i=1}^8 \leq 9 | \lambda_1=\frac{1}{2}\bigg)\]
+
+New parameter of alternative hypothesis: $n\lambda=4$ 
+```{r}
+ppois(q=9, lambda=4)
+```
+So our power is $0.992$.  The large power is due to the large difference between the two parameters.
+
+**General Form of Neyman-Pearson Lemma**  
+This method is to maximize $E_1[d(\mathbf{X})]$ subject to the constraints
+\[
+E_0[d(\mathbf{X})]=\alpha \ \text{and} \ 0 \leq d(\mathbf{X}) \leq 1
+\]
+The optimal $d$ is given by
+\[
+d(\mathbf{X}) =
+\begin{cases}
+1, f_0(\mathbf{X}) < cf_1(\mathbf{X}) \\
+k, f_0(\mathbf{X}) = cf_1(\mathbf{X}) \\
+0, f_0(\mathbf{X}) > cf_1(\mathbf{X}) 
+\end{cases}
+\]
+where $c$ and $k \in (0,1)$ are chosen so that the constraints are satisfied.  In the case where the statistic $T(\mathbf{X})=f_0(\mathbf{X})/f_1(\mathbf{X})$ is a continuous random variable (which imlies $X_1, \dots, X_n$ are continuous), we can take the optimal $d$ to be $0$ or $1$ for all possible values of $X_1, \dots, X_n$ and so a most powerful (MP) test of $H_0: f=f_0$ vs. $H_1: f=f_1$ exists for all $\alpha > 0$.  
+
+However, for a given level $\alpha$, a most powerful test $H_0$ vs. $H_1$ need not exist if $T(\mathbf{X})$ discrete.  
+
+**Example**  Suppose that $X_1, \dots, X_n$ are i.i.d. uniform random variables on the interval $[0, \theta]$ where $\theta$ is either $\theta_0$ or $\theta_1$ (where $\theta_0 > \theta_1$).  We want to test $H_0: \theta = \theta_0$ vs. $H_1: \theta=\theta_1$ at level $\alpha$.  The pdf of the uniform is $f(x)=\frac{1}{b-a}$, and the joint density of $\mathbf{X}=(X_1,\dots,X_n)$ is 
+\[
+f(\mathbf{x};\theta)=\frac{1}{\theta^n} \mathbf{I}_{(max(X_1,\dots,X_n)\leq \theta)}
+\]
+and a most powerful test of $H_0$ vs. $H_1$ will be based on the test statistic $\Big[$ and let $\text{max}(X_1, \dots, X_n) \equiv X_{(n)}$, the order statistic$\Big]$
+\[
+\begin{aligned}
+T(\mathbf{X}) &= \frac{f(\mathbf{x};\theta_0)}{f(\mathbf{x}; \theta_1)} \\
+  &= \bigg(\frac{\theta_1}{\theta_0}\bigg)^n \mathbf{I}_{(X_{(n)}\leq \theta_1)}
+\end{aligned}
+\]
+The indicator variable is set to compare the largest $X_i$ against the smaller upper bound, $\theta_1$.  If $X_{(n)} > \theta_1$, then we can  conclude that $H_A: \theta = \theta_1$ couldn't be true.
+Note that there are only two possible values of $T$, $\Big(\frac{\theta_1}{\theta_0}\Big)^n$ or $0$, depending on if $X_{(n)}$ is greater than $\theta_1$ or not.
+
+It follows that the test that rejects $H_0$ when $X_{(n)} \leq \theta_1$ will be a most powerful test of $H_0$ vs. $H_1$ with level
+\[
+\begin{aligned}
+\alpha &= P_{\theta_0}[X_{(n)} \leq \theta_1] \\
+  &= \bigg(\frac{\theta_1 - 0}{\theta_0 - 0}\bigg)^n
+\end{aligned}
+\]
+Recall $\theta_1 < \theta_0$ so $\frac{\theta_1}{\theta_0} < 1$. Raising $\frac{\theta_1}{\theta_0}$ to the $n^{th}$ power can lower the value to equal $\alpha$.   So $n$ can be manipulated to meet $\alpha$.  Otherwise, we have no way to create a scenario to set the $\alpha$ value - $\theta_1$ and $\theta_0$ are fixed values.
+
+The power of the test is
+\[
+P_{\theta_1}[X_{(n)} \leq \theta_1] = 1
+\]
+Note that this test will also be the most powerful test for any level $\alpha > \Big(\frac{\theta_1}{\theta_0}\Big)^n$ since the power will be 1.
+
+If we want the most powerful test for $\alpha < \Big(\frac{\theta_1}{\theta_0}\Big)^n$ in the previous example, the Neyman-Pearson Lemma does not help directly.  
+
+However, since $X_{(n)}$ is sufficient for $\theta$, we intuitively should reject $H_0$ for $X_{(n)} \leq k$ where
+\[
+P_{\theta_0}[X_{(n)} \leq k] = \bigg(\frac{k}{\theta_0}\bigg)^n = \alpha
+\]
+
+Solving the equation, we get $\theta_0\alpha^{1/n}=k$ and so the power of the test is
+\[
+\begin{aligned}
+P_{\theta_1}[X_{(n)}\leq \theta_0\alpha^{1/n}] &= \bigg(\frac{\theta_0\alpha^{1/n}}{\theta_1}\bigg)^n \\
+  &=\alpha\bigg(\frac{\theta_0}{\theta_1}\bigg)^n
+\end{aligned}
+\]
+To show this is an most powerful test for $\alpha < \Big(\frac{\theta_1}{\theta_0}\Big)^n$, we use the general form of the Neyman-Pearson Lemma, a function $d$ that maximizes $E_{\theta_0}[d(\mathbf{X})]$ under the constraints
+\[
+E_{\theta_0}[d(\mathbf{X})] = \alpha < \Big(\frac{\theta_1}{\theta_0}\Big)^n \ \text{and} \ 0 \leq d(\mathbf{X}) \leq 1
+\]
+is 
+\[
+d(\mathbf{X})=
+\begin{cases} 
+1, X_{(n)} \leq \theta_0 \alpha^{1/n} \\
+0, \text{otherwise}
+\end{cases}
+\]
+
+Since $E_{\theta_1}[d(\mathbf{X})]=\alpha\bigg(\frac{\theta_0}{\theta_1}\bigg)^n=P_{\theta_1}[X_{(n)}\leq \theta_0\alpha^{1/n}]$, the test that rejects $H_0$ if $X_{(n)} \leq \theta_0\alpha^{1/n}$ is a most powerful test for level $\alpha < \bigg(\frac{\theta_1}{\theta_0}\bigg)^n$
+
+The p-value is defined as the smallest level of significance at which an experimenter using a particular test statistic, $T$, would reject $H_0$ on the basis of the observed outcome.  
+
+**Uniformly Most Powerful Tests**  
+If a hypothesis does not completely specify the probability distribution, then the hypothesis is called a composite hypothesis.
+
+In some cases, the theory of the Neyman-Pearson Lemma can be extended to cover composite hypotheses.  
+
+If the alternative, $H_1$, is composite, a test that is most powerful for every simple alternative in $H_1$ is said to be uniformly most powerful.
+
+**Definition**  Formally, a level-$\alpha$ test, $\psi$, is uniformly most powerful (UMP) for $H_0: \theta \in \Theta_0$ vs. $H_1: \theta \in \Theta_1$, for any other level-$\alpha$ test $\psi^*$.  
+
+**Example** Let $Y$ have a binomial distribution bin$(n,p)$.  Find a uniformly most powerful test of the simple null hypothesis $H_0:p=p_0$ against the one-sided composite alternative hypothesis $H_1: p=p_1>p_0$.
+
