@@ -48,7 +48,7 @@ $$\lim_{n \to \infty} P\big(\big|F_n(x) - F(x)\big| < \epsilon \big) = 1$$
 
 $\Big($ The derivation resulted in the inequality $\lim_{n \to \infty} P\big(\big|F_n(x) - F(x)\big| < \epsilon \big) \geq 1$.  However, since probabilities cannot exceed 1, the inequality becomes  $\lim_{n \to \infty} P\big(\big|F_n(x) - F(x)\big| < \epsilon \big) = 1$.$\Big)$
 
-Since $F_n(x) = \hat{p}$ is the proportion of times that $X \leq x$, we may rely on the Weak Law of Large Numbers (WLLN), which states that $F_n(x)$ will converge in probability to $F(x)=p$, or $F_n(x) \xrightarrow{p} F(x)$.
+Since $F_n(x) = \hat{p}$ is the proportion of times that $X \leq x$, we may rely on the Weak Law of Large Numbers (WLLN), which states that $F_n(x)$ will converge in probability to $F(x)=p$, or $F_n(x) \xright{p} F(x)$.
 
 Reminder: $\xrightarrow{p}$ means that it converges in probability.
 
@@ -894,6 +894,8 @@ Let $x$ denote the number of texts that arrive in 8 hours.  We have a Poisson di
 Recall the Poisson pmf:
 \[f(X=x)=\frac{\lambda^x e^{-\lambda}}{x!}\]
 
+The parameter $\lambda$ represents the rate in a specified physical area or time frame.  Here, $\lambda=8$ for the older child (8 texts in an 8-hour period) and $\lambda=12$ for the younger child.
+
 To get an idea about the distributions:
 ```{r fig.width=4, fig.height=3}
 x <- 0:15 # considering probabilities for each of these counts
@@ -915,7 +917,7 @@ Likelihood:
 This is the likelihood ratio, so the younger sibling's phone is less likely to produce exactly 9 texts in 8 hours.  
 
 On the other hand, if we had observed 11 texts, then 
-$$\frac{P_{younger}(x=11)}{P_{older}(x=11)}$$
+$$\frac{P_{younger}(x=11)}{P_{older}(x=11)}=1.58$$
 which means the younger sibling's phone is 1.58 times more likely to produce 11 texts in 8 hours.
 
 When we have one hypothesis for each phone, $H_0$ and $H_1$, we have what is known as a **simple hypothesis**.  
@@ -962,7 +964,7 @@ Note that the graph is nonlinear and is a monotonically increasing function of $
 
 Interpretation: If $x<10$, it is more likely that the older sibling's phone.
 
-Now suppose that we believe that there was a one-third probability that we chose the younger child's phone (H_0).  Then if we were calculating Bayesian probabilities:
+Now suppose that we believe that there was a one-third probability that we chose the younger child's phone ($H_0$).  Then if we were calculating Bayesian probabilities:
 \[
 \begin{aligned}
 \frac{P(H_0|x)}{P(H_1|x)} &=\frac{P(x|H_0)}{P(x|H_1)}\frac{P(H_0)}{P(H_1)} \\
@@ -980,7 +982,7 @@ ratio <- round(dpois(x=x, lambda=12)/dpois(x=x, lambda=8)*(1/3)/(2/3),2)
 $\frac{P(H_0|x)}{P(H_1|x)}\frac{P(H_0)}{P(H_1)}$|`r ratio[1]`|`r ratio[2]`|`r ratio[3]`|`r ratio[4]`|`r ratio[5]`|`r ratio[6]`|`r ratio[7]`|`r ratio[8]`|`r ratio[9]`|`r ratio[10]`|`r ratio[11]`|`r ratio[12]`|`r ratio[13]`|`r ratio[14]`|`r ratio[15]`|`r ratio[16]`
 
 
-```{r echo=3:6, fig.width=10, warning=FALSE}
+```{r echo=3:7, fig.width=10, warning=FALSE}
 default <- par()
 par(mfrow=c(1,2))
 x <- 0:15
@@ -995,7 +997,7 @@ points(x=x, y=dpois(x=x, lambda=12)/dpois(x=x, lambda=8))
 par(default)
 ```
 
-The Bayesian ratio has a more gradual rise because $P(H_0)<0.5$.
+The Bayesian likelihood has a more gradual rise because $\frac{P(H_0)}{P(H_1)}=0.5$.  The Bayesian likelihood at each $x$ is half of the likelihood with a flat prior.
 
 We choose $H_0$ if
 $$\frac{P(H_0|x)}{P(H_1|x)} = \frac{P(x|H_0)}{P(x|H_1)}\frac{P(H_0)}{P(H_1)} > 1$$
@@ -1025,9 +1027,9 @@ The two possible errors are:
 
 **Example**  If $c=1$, what are the probabilities of making an error in our conclusion?
 
-Type I Error (wrongly rejecting $H_0$): If the phone had fewer than 10 texts, our model indicates that we have the older child's phone.  But in reality, the phone belongs to the younger child. 
+Type I Error (wrongly rejecting $H_0$): If the phone had fewer than 10 texts, our model indicates that we have the older child's phone, and we make such a conclusion.  But in reality, the phone belongs to the younger child which is our $H_0$. 
 
-To calculate the probability of this error, we use the younger child's cdf to find the total probability of when a phone with fewer than 10 texts is actually the younger child's phone.
+To calculate the probability of this error, we use the younger child's cdf (Pois($\lambda=12$)) to find the total probability of when the younger child's phone receives fewer than 10 texts.
 $$
 \begin{aligned}
 P(\text{Reject} \ H_0|H_0) &= P(X < 10 |H_0) \\
@@ -1035,9 +1037,9 @@ P(\text{Reject} \ H_0|H_0) &= P(X < 10 |H_0) \\
 \end{aligned}
 $$
 
-Type II Error (wrongly accepting $H_0$): If the phone had 10 or more texts, we would conclude that we had the younger child's phone.  But in reality, the phone belongs to the older child. 
+Type II Error (wrongly accepting $H_0$): If the phone had 10 or more texts, we would conclude that we had the younger child's phone.  But in reality, the phone belongs to the older child which is our $H_1$. 
 
-To calculate the probability of this error, we use the older child's cdf to find the total probability of when a phone with 10 or more texts is actually the older child's phone.
+To calculate the probability of this error, we use the older child's cdf (Pois($\lambda=8$)) to find the total probability of that the older child's phone receives 10 or more texts.
 
 $$
 \begin{aligned}
@@ -1055,7 +1057,7 @@ $$\frac{P(H_0)}{P(H_1)}=\frac{1}{2}$$
 
 So $P(H_0)=\frac{1}{3}$ and $P(H_1)=\frac{2}{3}$.
 
-Our calculations showed that the threshold shifted to between 11 and 12 texts.
+Our calculations and plots showed that the threshold shifted from 9-10 to 11-12 texts.
 
 Type I Error (wrongly rejecting $H_0$): The phone has fewer than 12 texts, we conclude that it is the older child's phone, but we are wrong.  Use $H_0$'s (younger child) cdf:
 $$
@@ -1097,40 +1099,46 @@ In this sense, the likelihood ratio test is most powerful.
 **Neyman-Pearson Proof**  
 Suppose that $\mathbf{X}=(X_1, \dots X_n)$ have joint density or mass function $f(x)$ where $f$ is one of $f_0$ or $f_1$ and we test 
 \[H_0:f=f_0 \ \text{vs.} \ H_1:f=f_1\]
-We will choose only one of these hypotheses, so our decision function, $d(\mathbf{X})$, is actually a Bernoulli random variable taking on a value of $0$ if we accept $H_0$ and 1 otherwise.
+We will choose only one of these hypotheses, so our decision function, $d(\mathbf{x})$, is actually a Bernoulli random variable taking on a value of $0$ if we accept $H_0$ and 1 otherwise.
 
 Consider our likelihood ratio test.  We have
 \[d(\mathbf{x})=
 \begin{cases}
-1, \ \text{if} \ f_0(\mathbf{x}) < cf_1(\mathbf{x}) \\
-0, \ \text{otherwise}
+1, \ \text{Reject $H_0$:} \ f_0(\mathbf{x}) < cf_1(\mathbf{x}) \\
+0, \ \text{Accept $H_0$:} \ f_0(\mathbf{x}) \geq cf_1(\mathbf{x})
 \end{cases}
 \]
 for some positive $c$.
 
-Note that we have rearranged the condition of $d(\mathbf{x})=1$ from what we had already seen:
+- Note that we have rearranged the condition of $d(\mathbf{x})=1$ from what we had already seen: At the end of the example of phones and text messages, we set up a rule that we should accept the null hypothesis if the likelihood of the null hypothesis divided by the likelihood of the alternative hypothesis exceeded a value, $c$:
+\[
+\frac{P(x|H_0)}{P(x|H_1)} > c \ \ \text{or} \ \ \frac{f_0(x)}{f_1(x)} > c
+\]
+But here we are switching our terms around and using the ratio to apply to when we reject the null hypothesis.  That is, we reject $H_0$ when $\frac{f_0(x)}{f_1(x)} < c$ and that is when $d(\mathbf{x})=1$.  So
 \[
 \frac{f_0(\mathbf{x})}{f_1(\mathbf{x})} < c \Rightarrow f_0(\mathbf{x}) < cf_1(\mathbf{x})
 \]
 
-Clearly, in regard to the null hypothesis,
+The decision function is a Bernoulli random variable which means that $E[d(\mathbf{X})]=P(d(\mathbf{X})=1)$
+
+In regard to the null hypothesis, $\alpha$ represents the probability that we reject $H_0$, or the probability that $d(\mathbf{X})=1$:
 \[
-E_0[d(\mathbf{x})]=P_0(d(\mathbf{x})=1)=\alpha
+E_0[d(\mathbf{X})]=P_0(d(\mathbf{X})=1)=\alpha
 \]
-which is the probability of type I error, whereas for the alternative hypothesis,
+This is the probability of type I error, whereas for the alternative hypothesis,
 \[
 \begin{aligned}
-E_1[d(\mathbf{x})] &= P_1(d(\mathbf{x})=1) \\
+E_1[d(\mathbf{X})] &= P_1(d(\mathbf{X})=1) \\
   &= 1 - \beta
 \end{aligned}
 \]
 It suffices to show that if $d^*(\mathbf{x})$ is the decision function of another test with $0 \leq d^*(\mathbf{x}) \leq 1$ and
 \[
-E_0[d^*(\mathbf{x})] \leq E_0[d(\mathbf{x})] = \alpha
+E_0[d^*(\mathbf{X})] \leq E_0[d(\mathbf{X})] = \alpha
 \]
 then
 \[
-E_1[d^*(\mathbf{x})] \leq E_1[d(\mathbf{x})]
+E_1[d^*(\mathbf{X})] \leq E_1[d(\mathbf{X})]
 \]
 where $E_1[d(\mathbf{x})]$ is our power, so we are making a direct comparison of power.
 
@@ -1148,11 +1156,13 @@ d^*(\mathbf{x})[cf_1(\mathbf{x})-f_0(\mathbf{x})] \leq d(\mathbf{x})[cf_1(\mathb
 \]
 and so,
 \[
-\int \cdots \int d^*(\mathbf{x})[cf_1(\mathbf{x}) - f_0(\mathbf{x})]d\mathbf{x} \leq \int \cdots \int d(\mathbf{x})[cf_1(\mathbf{x})-f_0(\mathbf{x})]d\mathbf{x}
-\]
-we can re-arrange the terms
-\[
-c\int \cdots \int [d^*(\mathbf{x})-d(\mathbf{x})]f_1(\mathbf{x})d\mathbf{x} \leq \int \cdots \int [d^*(\mathbf{x})-d(\mathbf{x})]f_0(\mathbf{x})d\mathbf{x}
+\begin{aligned}
+\int \cdots \int d^*(\mathbf{x})[cf_1(\mathbf{x}) - f_0(\mathbf{x})]d\mathbf{x} &\leq \int \cdots \int d(\mathbf{x})[cf_1(\mathbf{x})-f_0(\mathbf{x})]d\mathbf{x} \\
+\int \cdots \int [d^*(\mathbf{x}) \cdot cf_1(\mathbf{x}) - d^*(\mathbf{x}) \cdot f_0(\mathbf{x})]d\mathbf{x} &\leq \int \cdots \int [d(\mathbf{x}) \cdot cf_1(\mathbf{x})- d(\mathbf{x}) \cdot f_0(\mathbf{x})]d\mathbf{x} \\
+\int \cdots \int [d^*(\mathbf{x}) \cdot cf_1(\mathbf{x}) - d(\mathbf{x}) \cdot cf_1(\mathbf{x})]d\mathbf{x} &\leq \int \cdots \int [d^*(\mathbf{x}) \cdot f_0(\mathbf{x}) - d(\mathbf{x}) \cdot f_0(\mathbf{x})]d\mathbf{x} \\
+\int \cdots \int c[d^*(\mathbf{x}) - d(\mathbf{x})] f_1(\mathbf{x}) d\mathbf{x} &\leq \int \cdots \int [d^*(\mathbf{x}) - d(\mathbf{x})] f_0(\mathbf{x}) d\mathbf{x} \\
+c\int \cdots \int [d^*(\mathbf{x})-d(\mathbf{x})]f_1(\mathbf{x})d\mathbf{x} &\leq \int \cdots \int [d^*(\mathbf{x})-d(\mathbf{x})]f_0(\mathbf{x})d\mathbf{x}
+\end{aligned}
 \]
 Note that the above could be sums instead of integrals in the discrete case.
 
@@ -1173,31 +1183,70 @@ Moreover, the Neyman-Pearson Lemma does not guarantee the uniqueness a most powe
 **Solution**  The likelihood ratio is
 \[
 \begin{aligned}
-T(\mathbf{x}) &= \frac{f_0(\mathbf{x})}{f_1(\mathbf{x})} \\
+T(\mathbf{X}) &= \frac{f_0(\mathbf{X})}{f_1(\mathbf{X})} \\
   &= \frac{f_0(X_1)f_0(X_2)\dots f_0(X_n)}{f_1(X_1)f_1(X_2)\dots f_1(X_n)} \\
-  &= \frac{\frac{1}{\theta_0^n}\exp\bigg[-\frac{1}{\theta_0}\sum_{i=1}^n x_i \bigg]}{\frac{1}{\theta_1^n}\exp\bigg[-\frac{1}{\theta_1}\sum_{i=1}^n x_i \bigg]} \\
-  &= \bigg(\frac{\theta_1}{\theta_0}\bigg)^n\exp\bigg[-\frac{1}{\theta_0}\bigg(\sum_{i=1}^n x_i\bigg) -\frac{1}{\theta_1}\sum_{i=1}^n x_i \bigg] \\
-  &= \bigg(\frac{\theta_1}{\theta_0}\bigg)^n\exp\bigg[-\bigg(\frac{1}{\theta_0}-\frac{1}{\theta_1}\bigg)\sum_{i=1}^n x_i\bigg]
+  &= \frac{\frac{1}{\theta_0^n}\exp\bigg[-\frac{1}{\theta_0}\sum_{i=1}^n X_i \bigg]}{\frac{1}{\theta_1^n}\exp\bigg[-\frac{1}{\theta_1}\sum_{i=1}^n X_i \bigg]} \\
+  &= \bigg(\frac{\theta_1}{\theta_0}\bigg)^n\exp\bigg[-\frac{1}{\theta_0}\bigg(\sum_{i=1}^n X_i\bigg) -\frac{1}{\theta_1}\sum_{i=1}^n X_i \bigg] \\
+  &= \bigg(\frac{\theta_1}{\theta_0}\bigg)^n\exp\bigg[-\bigg(\frac{1}{\theta_0}-\frac{1}{\theta_1}\bigg)\sum_{i=1}^n X_i\bigg]
 \end{aligned}
 \]
-Notice that the likelihood ratio is monotonically decreasing as $\sum_{i=1}^n x_i$ increases (we know because $\theta_1 > \theta_0 \Rightarrow -(\theta_0^{-1}-\theta_1^{-1})<0$).  Here, we will reject if $\sum_{i=1}^n x_i > k$.
 
-We know that the sum of exponential i.i.d. random variables is a gamma-distributed random variable.
+We are interested in setting a threshold with which we would reject $H_0$ if the likelihood ratio descends below a certain point.
 
-Thus, if $H_0$ is true, $\sum_{i=1}^n x_i \sim \text{Gamma}(n, \theta_0)$, for specified $\alpha$, $k$ is the $(1-\alpha)^{th}$ quantile of this gamma distribution, say $\pi_{\alpha}$.
+But note that the likelihood ratio is monotonically decreasing as $\sum_{i=1}^n X_i$ increases (we know this because we are given $\theta_1 > \theta_0$).  The parameters $\theta_0$, $\theta_1$, and $n$ are fixed.  The only variable is $\sum_{i=1}^n X_i$.  Therefore, instead of setting a threshold for the likelihood ratio, we will do so for $\sum_{i=1}^n X_i$.  We will reject $H_0$ if 
+\[\sum_{i=1}^n X_i > k\]
 
-The Neyman-Pearson Lemma tells us that the most powerful test rejects for $\sum_{i=1}^n x_i > k$, where $k=\pi_{\alpha}$, \[\alpha=P_{\theta_0}\bigg[\sum_{i=1}^n x_i > k\bigg]\]
+The reason why we focus on $\sum_{i=1}^n X_i$ and not the likelihood ratio is because we know that the sum of exponential i.i.d. random variables is a gamma-distributed random variable.
+
+Thus, if $H_0$ is true, then $\sum_{i=1}^n X_i \sim \text{Gamma}(n, \theta_0)$. 
+
+A gamma distribution looks something like
+
+```{r echo=FALSE, fig.height=3, fig.width=6}
+library(ggplot2)
+ggplot(data.frame(x=c(0, 250), y=c(0, .5)), aes(x)) + 
+  stat_function(fun=function(x) dgamma(x=x, shape=10, scale=10)) +
+  geom_vline(data=NULL, aes(xintercept=175),
+               linetype="solid", size=.5, colour="black") +
+  labs(title=expression(paste("Distribution of ", Sigma, "X")))
+```
+
+The vertical line represents a hypothetical location of $k$ and is interpreted in much the same way as one interprets a p-value with respect to a rejection region that is specified for a normal distribution.  
+
+For a specified $\alpha$, $k$ is the $(1-\alpha)^{th}$ quantile of this gamma distribution, say $\pi_{\alpha}$.
+
+
+The Neyman-Pearson Lemma tells us that the most powerful test rejects $H_0$ for $\sum_{i=1}^n X_i > k$, where $k=\pi_{\alpha}$, when 
+\[\alpha=P_{\theta_0}\bigg[\sum_{i=1}^n X_i > k\bigg]\]
 and the power of the test is 
-\[P_{\theta_1}\bigg[\sum_{i=1}^n x_i > k\bigg]\]
+\[P_{\theta_1}\bigg[\sum_{i=1}^n X_i > k\bigg]\]
 
-**Example** Using the findings from above, let $\alpha=0.05$, $H_0: \theta_0 = 3$, $H_1: \theta_1=10$, and $n=20$.
+Elsewhere the notation appears as
+\[
+\text{Rejection Region:} \ \alpha=P\bigg(\sum_{i=1}^n X_i > k \ \Big| \ \theta_0 \bigg)
+\]
+\[
+\text{Power:} \ P\bigg(\sum_{i=1}^n X_i > k \ \Big| \ \theta_1 \bigg)
+\]
+
+(Put in simple terms, the Neyman-Pearson Lemma tells us that to find the most powerful test, find $k$ such that the rejection region created by $k$ is equal to $\alpha$.)
+
+**Example** Using the findings from above, let $\alpha=0.05$ and $n=20$.  Our hypotheses:
+\[
+H_0: \theta_0 = 3 \ \ \ \text{vs.} \ \ \ H_1: \theta_1 = 10
+\]
+We are given $\alpha$, now we must determine $k$.
+\[
+0.05=P\bigg(\sum_{i=1}^{20} X_i > k \ \Big| \ \theta_0=3 \bigg)
+\]
+How to determine $k$ in `R`: `qgamma(p=0.95, shape=20, scale=3)` = `r qgamma(p=0.95, shape=20, scale=3)`
 ```{r fig.height=4, fig.width=5}
 k <- qgamma(p=0.95, shape=20, scale=3) # gives us k
 1-pgamma(q=k, shape=20, scale=10) # power of test
 sum.x <- 1:300
 H_0 <- dgamma(x=sum.x, shape=20, scale=3) # null hypothesis
 H_1 <- dgamma(x=sum.x, shape=20, scale=10) # alt hypothesis
-plot(x=sum.x, y=H_0, type='l')
+plot(x=sum.x, y=H_0, xlab="Sum of X Values", ylab="Density", type='l')
 lines(x=sum.x, y=H_1, col='red')
 # represents critical value
 abline(v=k, col='blue')
@@ -1208,7 +1257,7 @@ abline(v=k, col='blue')
 Some variables that affect power:
 
 - The significance level chosen ($\alpha$).
-- The sample size, $n$.  
+- The sample size, $n$.  Increasing the sample size will condense the curves so that the range is narrower and taller.
 - The difference between the two hypotheses, $\theta_0$ and $\theta_1$.  
 
 The power in this example is extremely large due to the difference in hypotheses.
@@ -1319,8 +1368,10 @@ normal_prob_area_plot(2, Inf)
 #b + geom_curve(aes(x = x1, y = y1, xend = x2, yend = y2, colour = "curve"), data = df, #curvature = -0.2) + geom_segment(aes(x = x1, y = y1, xend = x2, yend = y2, colour = "segment"), data = df)
 ```
 
+
+
 **January 27, 2016**  
-**Problem**  Let $H_0: X_1,\dots, X_8 \sim \text{Poisson}(\lambda=2) \text{vs.} H_1: X_1,\dots ,X_8 \sim \text{Poisson}(\lambda=\frac{1}{2})$. Find the most powerful test.  
+**Problem**  Let $H_0: X_1,\dots, X_8 \sim \text{Poisson}(\lambda=2) \ \text{vs.} \ H_1: X_1,\dots ,X_8 \sim \text{Poisson}(\lambda=\frac{1}{2})$. Find the most powerful test.  
 **Solution**  
 \[
 \begin{aligned}
@@ -1331,12 +1382,12 @@ normal_prob_area_plot(2, Inf)
 \]
 The likelihood ratio is a monotonically increasing function of $\sum X_i$ as $\sum X_i$ increases.  That is to say that $H_0$ becomes increasingly probable as $\sum X_i$ increases.  So if the ratio is low, we are inclined to reject the null hypothesis.
 
-Since $\sum_{i=1}^8 X_i \sim \text{Pois}(8\lambda)$ then the $\alpha$-level most powerful test rejects when $\sum_{i=1}^8 < k$, where 
-\[P\bigg(\sum_{i=1}^8 X_i < k | \lambda=2\bigg)=\alpha\]
-What is the above equation saying?  We want the cumulative probability of the sum of $X_i$ variables is less than a specified $k$ such that the the probability is equal to $\alpha$.
-(If given $\alpha$, we can find $k$.)
+The $\alpha$-level most powerful test rejects $H_0$ when $\sum_{i=1}^8 X_i < k$, where 
+\[P\bigg(\sum_{i=1}^8 X_i < k \ \Big| \ \lambda_0=2\bigg)=\alpha\]
 
-In our example $X_i$ are Poisson distributed.  The sum of them are also Poisson distributed where the new parameter is $n\lambda$.
+What is the above equation saying?  We want the sum of $X_i$ variables to be less than a specified $k$ such that the probability is equal to $\alpha$.
+
+In this example, if given $\alpha$, we can find $k$ since the sum of Poisson random variables are also Poisson distributed where the new parameter is $n\lambda$. So $\sum_{i=1}^8 X_i \sim \text{Pois}(8\lambda)$.
 
 Let $\alpha=0.05$.  We had 8 samples, so our new parameter is $n\lambda = 16$.  We will find $k$ through trial and error.  Try $k=6$ (cumulative probability for 5 or fewer):
 ```{r}
@@ -1358,7 +1409,7 @@ Since Poisson deals with discrete values, this is the closest that we can have t
 So when $k=10$, then $\alpha=0.0433$.
 
 Then our power is the probability that we will correctly reject the null hypothesis if the alternative hypothesis is true: 
-\[P\bigg(\sum_{i=1}^8 \leq 9 | \lambda_1=\frac{1}{2}\bigg)\]
+\[P\bigg(\sum_{i=1}^8 \leq 9 \ \Big| \ \lambda_1=\frac{1}{2}\bigg)\]
 
 New parameter of alternative hypothesis: $n\lambda=4$ 
 ```{r}
@@ -1366,7 +1417,7 @@ ppois(q=9, lambda=4)
 ```
 So our power is $0.992$.  The large power is due to the large difference between the two parameters.
 
-**General Form of Neyman-Pearson Lemma**  
+###General Form of Neyman-Pearson Lemma    
 This method is to maximize $E_1[d(\mathbf{X})]$ subject to the constraints
 \[
 E_0[d(\mathbf{X})]=\alpha \ \text{and} \ 0 \leq d(\mathbf{X}) \leq 1
@@ -1380,54 +1431,91 @@ k, f_0(\mathbf{X}) = cf_1(\mathbf{X}) \\
 0, f_0(\mathbf{X}) > cf_1(\mathbf{X}) 
 \end{cases}
 \]
-where $c$ and $k \in (0,1)$ are chosen so that the constraints are satisfied.  In the case where the statistic $T(\mathbf{X})=f_0(\mathbf{X})/f_1(\mathbf{X})$ is a continuous random variable (which imlies $X_1, \dots, X_n$ are continuous), we can take the optimal $d$ to be $0$ or $1$ for all possible values of $X_1, \dots, X_n$ and so a most powerful (MP) test of $H_0: f=f_0$ vs. $H_1: f=f_1$ exists for all $\alpha > 0$.  
+where $c$ and $k \in (0,1)$ are chosen so that the constraints are satisfied.  In the case where the statistic $T(\mathbf{X})=f_0(\mathbf{X})/f_1(\mathbf{X})$ is a continuous random variable (which implies $X_1, \dots, X_n$ are continuous), we can take the optimal $d$ to be $0$ or $1$ for all possible values of $X_1, \dots, X_n$ and so a most powerful (MP) test of $H_0: f=f_0$ vs. $H_1: f=f_1$ exists for all $\alpha > 0$.  
 
 However, for a given level $\alpha$, a most powerful test $H_0$ vs. $H_1$ need not exist if $T(\mathbf{X})$ discrete.  
 
-**Example**  Suppose that $X_1, \dots, X_n$ are i.i.d. uniform random variables on the interval $[0, \theta]$ where $\theta$ is either $\theta_0$ or $\theta_1$ (where $\theta_0 > \theta_1$).  We want to test $H_0: \theta = \theta_0$ vs. $H_1: \theta=\theta_1$ at level $\alpha$.  The pdf of the uniform is $f(x)=\frac{1}{b-a}$, and the joint density of $\mathbf{X}=(X_1,\dots,X_n)$ is 
+**Example**  Suppose that $X_1, \dots, X_n$ are i.i.d. uniform random variables on the interval $[0, \theta]$ where $\theta$ is either $\theta_0$ or $\theta_1$ (where $\theta_0 > \theta_1$).  We want to test $H_0: \theta = \theta_0$ vs. $H_1: \theta=\theta_1$ at level $\alpha$.  
+
+```{r fig.width=6, fig.height=2, echo=FALSE}
+ggplot(data.frame(x=c(0, 5), y=c(0,1.25)), aes(x=x, y=y)) + geom_segment(mapping=aes(x=0,y=1,xend=1,yend=1), size=.5, colour="blue") + 
+  geom_segment(mapping=aes(x=0,y=.5,xend=2,yend=.5), size=.5, colour="red") + 
+  geom_segment(mapping=aes(x=0,y=0,xend=0,yend=1), size=.5) + geom_segment(mapping=aes(x=1,y=0,xend=1,yend=1), size=.5, colour="blue") + 
+  geom_segment(mapping=aes(x=2,y=0,xend=2,yend=.5), size=.5, colour="red") + 
+  scale_x_continuous(breaks = c(1, 2), labels=c(expression(theta["1"]), expression(theta["0"]))) +
+  coord_cartesian(xlim=c(0, 2.25), ylim=c(0,1.25)) + 
+  labs(title=expression(paste("PDFs of 2 Distributions, ", theta["1"], "<", theta["0"])))
+```
+
+
+The pdf of the uniform is $f(x)=\frac{1}{b-a}$, and the joint density of $\mathbf{X}=(X_1,\dots,X_n)$ is 
 \[
-f(\mathbf{x};\theta)=\frac{1}{\theta^n} \mathbf{I}_{(max(X_1,\dots,X_n)\leq \theta)}
+f(\mathbf{X};\theta)=\frac{1}{\theta^n} \mathbf{I}_{(max(X_1,\dots,X_n)\leq \theta)}
 \]
-and a most powerful test of $H_0$ vs. $H_1$ will be based on the test statistic $\Big[$ and let $\text{max}(X_1, \dots, X_n) \equiv X_{(n)}$, the order statistic$\Big]$
+
+- The purpose of $\mathbf{I}_{(max(X_1,\dots,X_n)\leq \theta)}$ is to take into account the possibility of the event $\theta$.  If $(max(X_1,\dots,X_n) > \theta)$, the $\theta$ cannot be our parameter for the upper bound.  Then $\mathbf{I}=0$ and the joint probability of $f(\mathbf{X})$ and $\theta$ is zero.
+
+A most powerful test of $H_0$ vs. $H_1$ will be based on the test statistic $\Big[$ and let $\text{max}(X_1, \dots, X_n) \equiv X_{(n)}$ (the notation $X_{(n)}$ comes from order statistics $\Big]$
 \[
 \begin{aligned}
-T(\mathbf{X}) &= \frac{f(\mathbf{x};\theta_0)}{f(\mathbf{x}; \theta_1)} \\
+T(\mathbf{X}) &= \frac{f(\mathbf{X};\theta_0)}{f(\mathbf{X}; \theta_1)} \\
+  &= \frac{\frac{1}{\theta_0-0}\cdots\frac{1}{\theta_0-0}}{\frac{1}{\theta_1-0}\cdots \frac{1}{\theta_1-0}} \\
   &= \bigg(\frac{\theta_1}{\theta_0}\bigg)^n \mathbf{I}_{(X_{(n)}\leq \theta_1)}
 \end{aligned}
 \]
-The indicator variable is set to compare the largest $X_i$ against the smaller upper bound, $\theta_1$.  If $X_{(n)} > \theta_1$, then we can  conclude that $H_A: \theta = \theta_1$ couldn't be true.
-Note that there are only two possible values of $T$, $\Big(\frac{\theta_1}{\theta_0}\Big)^n$ or $0$, depending on if $X_{(n)}$ is greater than $\theta_1$ or not.
+
+- The indicator variable is set to compare the largest $X_i$ against the smaller upper bound, $\theta_1$.  If $X_{(n)} > \theta_1$, then we can  conclude that $H_A: \theta = \theta_1$ couldn't be true.
+
+Note that there are two possibilities for $T$:
+
+- $\Big(\frac{\theta_1}{\theta_0}\Big)^n$ if $X_{(n)}$ is equal to or less than $\theta_1$
+- $0$ if $X_{(n)}$ is greater than $\theta_1$.
 
 It follows that the test that rejects $H_0$ when $X_{(n)} \leq \theta_1$ will be a most powerful test of $H_0$ vs. $H_1$ with level
 \[
 \begin{aligned}
-\alpha &= P_{\theta_0}[X_{(n)} \leq \theta_1] \\
-  &= \bigg(\frac{\theta_1 - 0}{\theta_0 - 0}\bigg)^n
+\alpha &= P_{\theta_0}(X_{(n)} \leq \theta_1) \\
+  &= \bigg(\frac{\theta_1}{\theta_0}\bigg)^n
 \end{aligned}
 \]
+Think about why this is the probability: if $X_i$ is uniformly distributed, the probability that it will fall within the larger bound is 100%.  The probability that it will fall within the lower bound is $\theta_1 / \theta_0$.
+
 Recall $\theta_1 < \theta_0$ so $\frac{\theta_1}{\theta_0} < 1$. Raising $\frac{\theta_1}{\theta_0}$ to the $n^{th}$ power can lower the value to equal $\alpha$.   So $n$ can be manipulated to meet $\alpha$.  Otherwise, we have no way to create a scenario to set the $\alpha$ value - $\theta_1$ and $\theta_0$ are fixed values.
 
 The power of the test is
 \[
-P_{\theta_1}[X_{(n)} \leq \theta_1] = 1
+P_{\theta_1}(X_{(n)} \leq \theta_1) = 1
 \]
-Note that this test will also be the most powerful test for any level $\alpha > \Big(\frac{\theta_1}{\theta_0}\Big)^n$ since the power will be 1.
+This is telling us an obvious fact: if $\theta_1$ (the smaller one) is the true parameter, then the maximum value, $X_{(n)}$, must be less than the true upper bound, $\theta_1$.  
+
+Note that this test will also be the most powerful test for any level $\alpha > \Big(\frac{\theta_1}{\theta_0}\Big)^n$ since the power will always be 1.
 
 If we want the most powerful test for $\alpha < \Big(\frac{\theta_1}{\theta_0}\Big)^n$ in the previous example, the Neyman-Pearson Lemma does not help directly.  
 
 However, since $X_{(n)}$ is sufficient for $\theta$, we intuitively should reject $H_0$ for $X_{(n)} \leq k$ where
 \[
-P_{\theta_0}[X_{(n)} \leq k] = \bigg(\frac{k}{\theta_0}\bigg)^n = \alpha
+P_{\theta_0}(X_{(n)} \leq k) = \bigg(\frac{k}{\theta_0}\bigg)^n = \alpha
 \]
+```{r fig.width=6, fig.height=2, echo=FALSE}
+ggplot(data.frame(x=c(0, 5), y=c(0,1.25)), aes(x=x, y=y)) + geom_segment(mapping=aes(x=0,y=1,xend=1,yend=1), size=.5, colour="blue") + 
+  geom_segment(mapping=aes(x=0,y=.5,xend=2,yend=.5), size=.5, colour="red") + 
+  geom_segment(mapping=aes(x=0,y=0,xend=0,yend=1), size=.5) + geom_segment(mapping=aes(x=1,y=0,xend=1,yend=1), size=.5, colour="blue") + 
+  geom_segment(mapping=aes(x=2,y=0,xend=2,yend=.5), size=.5, colour="red") + 
+  geom_segment(mapping=aes(x=.1,y=0,xend=.1,yend=.5), size=.1) + 
+  scale_x_continuous(breaks = c(.1, 1, 2), labels=c(expression(alpha), expression(theta["1"]), expression(theta["0"]))) +
+  coord_cartesian(xlim=c(0, 2.25), ylim=c(0,1.25)) + 
+  labs(title=expression(paste("PDFs of 2 Distributions, ", theta["1"], "<", theta["0"])))
+```
 
-Solving the equation, we get $\theta_0\alpha^{1/n}=k$ and so the power of the test is
+Solving for $k$, we get $k=\theta_0\alpha^{1/n}$ and so the power of the test is
 \[
 \begin{aligned}
-P_{\theta_1}[X_{(n)}\leq \theta_0\alpha^{1/n}] &= \bigg(\frac{\theta_0\alpha^{1/n}}{\theta_1}\bigg)^n \\
+P_{\theta_1}(X_{(n)} \leq k) &= \bigg(\frac{k}{\theta_1}\bigg)^n \\
+P_{\theta_1}(X_{(n)}\leq \theta_0\alpha^{1/n}) &= \bigg(\frac{\theta_0\alpha^{1/n}}{\theta_1}\bigg)^n \\
   &=\alpha\bigg(\frac{\theta_0}{\theta_1}\bigg)^n
 \end{aligned}
 \]
-To show this is an most powerful test for $\alpha < \Big(\frac{\theta_1}{\theta_0}\Big)^n$, we use the general form of the Neyman-Pearson Lemma, a function $d$ that maximizes $E_{\theta_0}[d(\mathbf{X})]$ under the constraints
+To show this is a most powerful test for $\alpha < \Big(\frac{\theta_1}{\theta_0}\Big)^n$, we use the general form of the Neyman-Pearson Lemma, a function $d$ that maximizes $E_{\theta_0}[d(\mathbf{X})]$ under the constraints
 \[
 E_{\theta_0}[d(\mathbf{X})] = \alpha < \Big(\frac{\theta_1}{\theta_0}\Big)^n \ \text{and} \ 0 \leq d(\mathbf{X}) \leq 1
 \]
@@ -1444,7 +1532,7 @@ Since $E_{\theta_1}[d(\mathbf{X})]=\alpha\bigg(\frac{\theta_0}{\theta_1}\bigg)^n
 
 The p-value is defined as the smallest level of significance at which an experimenter using a particular test statistic, $T$, would reject $H_0$ on the basis of the observed outcome.  
 
-**Uniformly Most Powerful Tests**  
+###Uniformly Most Powerful Tests  
 If a hypothesis does not completely specify the probability distribution, then the hypothesis is called a composite hypothesis.
 
 In some cases, the theory of the Neyman-Pearson Lemma can be extended to cover composite hypotheses.  
@@ -1453,5 +1541,317 @@ If the alternative, $H_1$, is composite, a test that is most powerful for every 
 
 **Definition**  Formally, a level-$\alpha$ test, $\psi$, is uniformly most powerful (UMP) for $H_0: \theta \in \Theta_0$ vs. $H_1: \theta \in \Theta_1$, for any other level-$\alpha$ test $\psi^*$.  
 
+**February 01, 2016**  
 **Example** Let $Y$ have a binomial distribution bin$(n,p)$.  Find a uniformly most powerful test of the simple null hypothesis $H_0:p=p_0$ against the one-sided composite alternative hypothesis $H_1: p=p_1>p_0$.
 
+We will set up a likelihood ratio and reject $H_0$ if the ratio is equal to or below a specified level $c$:
+\[
+T(y) =\frac{f_0(y)}{f_1(y)} = \frac{\binom{n}{y}p_0^y(1-p_0)^{n-y}}{\binom{n}{y}p_1^y(1-p_1)^{n-y}} \leq c
+\]
+As in previous examples, we want to re-arrange this equality/inequality so that we can isolate the random variable whose distribution we know. And we know $y$ is binomial.
+
+The ratio is equivalent to 
+\[
+T(y) = \bigg(\frac{p_0(1-p_1)}{p_1(1-p_0)}\bigg)^y\bigg(\frac{1-p_0}{1-p_1}\bigg)^n \leq c
+\]
+Take the log of both sides
+\[
+y\log\bigg(\frac{p_0(1-p_1)}{p_1(1-p_0)}\bigg) \leq \log c - n \log\bigg(\frac{1-p_0}{1-p_1}\bigg)
+\]
+Since we are given $p_0 < p_1$, we have $p_0(1-p_1) < p_1(1-p_0)$, and it follows that $\log\Big(\frac{p_0(1-p_1)}{p_1(1-p_0)}\Big) < 0$.  
+
+Then when we divide both sides by $\log\Big(\frac{p_0(1-p_1)}{p_1(1-p_0)}\Big)$, the inequality switches direction:
+\[
+y \geq \frac{\log c - n \log \bigg(\frac{1-p_0}{1-p_1}\bigg)}{\log \bigg(\frac{p_0(1-p_1)}{p_1(1-p_0)}\bigg)}
+\]
+for each $p_1 > p_0$.  The right-hand side of the inequality consist of constant terms: $c,n,p_0,p_1$.  So we can simply equate that to a constant that we'll call $k$:
+\[
+y \geq k
+\]
+
+To find our uniformly most powerful test, select $k$ such that $P_0(Y\leq k)=\alpha$.
+
+Note that because this is a one sided test (i.e. $p_1 > p_0$), the same value of $k$ can be used for every $p_1 > p_0$ (doesn't depend on the value $p_1$).
+
+Since the rejection region defines a test that is most powerful against each simple alternative $p_1 > p_0$, this is a uniformly most powerful test.
+
+- Typically a uniformly most powerful test does not exist for two-sided tests.  If this were a two-sided test (i.e. $p_0 \neq p_1$), then $k$ would depend on $p_1$: $k$ would be one value if $p_0 < p_1$ and another value if $p_0 > p_1$.  This is because of the term $\log\Big(\frac{p_0(1-p_1)}{p_1(1-p_0)}\Big)$ which is negative when $p_0 < p_1$ and positive when $p_0 > p_1$.  So if $H_1$ was $p_0 \neq p_1$, then we could not propose a single test that would be most powerful against all possible alternatives.
+
+
+To put this example in more concrete terms, suppose  
+$\alpha=0.05$  
+$n=40$  
+$p_0=0.5$  
+To determine our threshold $k$:
+\[
+\begin{aligned}
+P(Y \leq k \ \big| \ p=p_0) &= \alpha \\
+P(Y \leq k \ \big| \ p=0.5) &= 0.05 \\
+\end{aligned}
+\]
+Use trial and error to determine $k$.  To get an idea of the distribution of $Y$ under $H_0$:
+```{r echo=FALSE, fig.width=5, fig.height=4}
+x <- 0:40
+plot(x=x, y=dbinom(x=x, size=40, prob=.5), type='h')
+```
+
+Our rejection region, $\alpha$, will be the cumulative probability equal to or above $k$.  At $\alpha=0.05$, we can try $k=24$: 
+
+`1 - pbinom(q=23, size=40, prob=.5)`$=$ `r 1-pbinom(q=23, size=40, prob=.5)`.
+
+Too much.  
+
+- Note that `pbinom(q=23, size=40, prob=.5)` calculates the cumulative probability of $k=23$ and below.  So `1 - pbinom(q=23, size=40, prob=.5)` calculates the complement: $k=24$ and above.
+
+Try $k=26$: `1 - pbinom(q=25, size=40, prob=.5)` $=$ `r 1 - pbinom(25, 40, 0.5)`.
+
+A little too low for our $\alpha=0.05$, but the best option given that we are dealing with discrete values.
+
+Just to be sure, $k=25$: `1 - pbinom(q=24, size=40, prob=.5)` = `r 1 - pbinom(24, 40, 0.5)`
+
+In conclusion, we would reject $H_0$ for any value of $y \geq 26$,
+
+For the power of the test as a function of $p$, we calculate right-tail cumulative probabilities for $y \geq 26$.
+```{r fig.width=5, fig.height=4}
+p1 <- seq(0.5, 1, length=1000) # for H1
+plot(x=p1, y=1-pbinom(q=25, size=50, prob=p1), type='l')
+```
+
+Note that our plot for power does not include $p_1 < 0.5$ since that wasn't part of our alternative hypothesis.
+
+
+###Duality of Hypothesis Tests and Confidence Regions  
+In decision theory, developing confidence regions and performing hypothesis test are "two sides of the same coin."
+
+Generally speaking, confidence regions are used in estimation to find a region where we are confident of where the unknown parameters lie.
+
+On the other hand, hypothesis testing is generally used to determine if a parameter is a particular value or not.  
+
+The intuition is that if the value under consideration in the hypothesis test lies in the confidence region, then we should accept (i.e. fail to reject) $H_0$, whereas if the value falls outside the confidence region, we should accept $H_1$.
+
+**Example**  Let $X_1, \dots, X_n$ be i.i.d. normal with unknown mean $\mu$ and known variance $\sigma^2$.  We know that the optimal $(1-\alpha)\times 100\%$ confidence interval for $\mu$ is
+\[
+\overline{X} \pm z_{\alpha/2}\frac{\sigma}{\sqrt{n}}
+\]
+(Reminder: for unknown $\mu$ and known $\sigma$, use $z$-distribution; for unknown $\mu$ and unknown $\sigma$, use $t$-distribution.)
+
+For the test $H_0: \mu=\mu_0$  vs. $H_1: \mu\neq \mu_0$, it can be shown that the generalized likelihood ratio test (shown in Example A, 9.4) accepts $H_0$ for small values of $|\overline{X} - \mu_0|$, specifically if $|\overline{X} - \mu_0| < z_{\alpha/2}\frac{\sigma}{\sqrt{n}}$, or if
+\[
+\overline{X} - z_{\alpha/2}\frac{\sigma}{\sqrt{n}} < \mu_0 < \overline{X} + z_{\alpha/2}\frac{\sigma}{\sqrt{n}}
+\]
+From the book: Comparing the aceptance region of the test to the confidence interval, we see that $\mu_0$ lies in the confidence interval for $\mu$ iff the hypothesis test  accepts.  In other words, *the confidence interval consists precisely of all those values of $\mu_0$ for which the null hypothesis $H_0: \mu=\mu_0$ is accepted.*  
+
+This example shows the duality of two-sided confidence intervals and two-sided test.  The same holds for one-sided confidence intervals and one-sided tests.
+
+We now see this holds more generally.  
+
+Theorem A will show that we can use the acceptance region of a hypothesis test to determine a confidence interval.
+
+Theorem B will show the converse of A: we can use a confidence interval to determine an acceptance region for a hypothesis test.
+
+**Theorem A**  Suppose that for every value $\theta_0 \in \Theta$, there is a test at level $\alpha$ of the hypothesis $H_0: \theta=\theta_0$.  Denote the acceptance region of the test by $A(\theta_0)$.  Then the set 
+\[
+C(\mathbf{X})=\{\theta: \mathbf{X} \in A(\theta_0)\}
+\]
+is a $(1-\alpha)\times 100\%$ confidence region for $\theta$. 
+
+**Proof**  Since $A$ is the acceptance region of a test at level $\alpha$,
+\[
+P(\mathbf{X} \in A(\theta_0) \ | \ \theta=\theta_0) = 1 - \alpha
+\]
+Now
+\[
+\begin{aligned}
+P(\theta_0 \in C(\mathbf{X}) \ | \ \theta=\theta_0) &= P(\mathbf{X} \in A(\theta_0) \ | \ \theta=\theta_0) \\
+ &= 1 - \alpha
+\end{aligned}
+\]
+by definition of $C(\mathbf{X})$. 
+
+- In other words, a $(1-\alpha)\times 100\%$ confidence region for $\theta$ consists of all those values of $\theta_0$ for which the hypothesis that $\theta=\theta_0$ will not be rejected at level $\alpha$.  
+
+**Theorem B**  Suppose that $C(\mathbf{X})$ is a $(1-\alpha)\times 100\%$ confidence region for $\theta$; that is, for every $\theta$,
+\[
+P(\theta_0 \in C(\mathbf{X}) \ | \ \theta=\theta_0) = 1 - \alpha
+\]
+Then an acceptance region for a test at level $\alpha$ of the hypothesis $H_0: \theta=\theta_0$ is
+\[
+A(\theta_0) = \{\mathbf{X}: \theta_0 \in C(\mathbf{X})\}
+\]
+**Proof** The test has level $\alpha$ because 
+\[
+P(\mathbf{X} \in A(\theta_0) \ | \ \theta=\theta_0) = P(\theta_0 \in C(\mathbf{X}) \ | \ \theta=\theta_0) = 1- \alpha
+\]
+
+- In other words, Theorem B states that the hypothesis that $\theta=\theta_0$ is accepted if $\theta_0$ lies in the confidence region.  
+
+The usefulness of these theorems lies in the realization that in a given situation, it may by easier to derive an acceptance region rather than construct a confidence region (or vice versa).
+
+Note: This is a means to derive **a** confidence region from a test (Theorem A) or **an** acceptance region from a confidence region (Theorem B).  
+
+###Uniformly Most Accurate Confidence Bounds  
+Within a certain notion of accuracy of confidence bounds, which is connected to the power of the associated one-sided test, optimality of the test translates into accuracy of the bounds.  
+
+- Theorems A & B showed the connection between acceptance region and confidence interval.  Now we'll show that a uniformly most powerful test (which pertains to acceptance regions, almost always one-sided) will give us a uniformly most accurate confidence bound (which pertains to confidence intervals, also one-sided).
+
+Consider, at the $(1-\alpha)$ level, two possible lower confidence bounds for $\theta$: $\theta_l$ and $\theta_l^*$.  The fact that they are supposed to be *lower* confidence bounds means that they *should* fall below the true $\theta$.
+
+But it's not good enough that $\theta_l$ and $\theta_l^*$ are simply below the true $\theta$.  We also want the bounds to be close to $\theta$.  Thus, we say that the bound with the smaller probability of being far below $\theta$ is more accurate.  (Closer is more accurate).
+
+**Definition** A level $(1-\alpha)$ lower confidence bound (LCB) $\theta_l^*$ of $\theta$ is said to be more accurate than a competing $(1-\alpha)$ LCB $\theta_l^*$ iff, for any fixed $\theta$ and all $\theta' < \theta$,
+\[
+\begin{aligned}
+P_{\theta}(\theta_l^*(X) \leq \theta') \leq P_{\theta}(\theta_l(X) \leq \theta') && (\dagger)
+\end{aligned}
+\]
+(This equation will be referenced a few times below.)  
+
+Of course, there is an analogous definition for upper bounds.  
+
+Lower confidence bounds $\theta^*_l$ satisfying $(\dagger)$ for all competitors is called **uniformly most accurate**.  
+
+Note: $\theta_l^*$ is a uniformly most accurate level $(1-\alpha)$ LCB for $\theta$ iff $-\theta^*_l$ is a uniformly most accurate level $(1-\alpha)$ UCB for $-\theta$.  
+
+**Example**  Suppose $X_1, \dots, X_n$ are i.i.d normal with unknown mean, $\mu$, and known variance $\sigma^2$.  
+
+As seen numerous times, the level $\alpha$ test for $H_0: \mu=\mu_0$ vs. $H_1: \mu > \mu_0$ rejects $H_0$ when 
+\[
+\frac{\overline{X}-\mu_0}{\frac{\sigma}{\sqrt{n}}} \geq z_{(1-\alpha)}
+\]
+
+Using our familiar method for finding confidence intervals, we know that the corresponding lower confidence bound is 
+\[
+\begin{aligned}
+\overline{X}-z_{1-\alpha}\frac{\sigma}{\sqrt{n}} && (\mu_l^*)
+\end{aligned}
+\]  
+(Understand the procedure: when the proposed alternative is greater than the null, we find the lower confidence bound.)
+
+It can be shown that $\mu^*_l$ is uniformly most accurate (shown in the next theorem).
+
+As it turns out, $(\dagger)$ is nothing more than a comparison of power functions.  
+
+**Theorem**  Let $\theta_l^*$ be a level $(1-\alpha)$ LCB for $\theta$ such that for each $\theta_0$ the associated test whose critical function $d(x, \theta_0)$ is given by 
+\[
+d(x, \theta_0) = 
+\begin{cases}
+1,& \ \text{if $\theta_l^*(x) > \theta_0$} \\
+0, & \ \text{otherwise}
+\end{cases}
+\]
+is uniformly most powerful level $\alpha$ for $H_0: \theta=\theta_0$ vs. $H_1: \theta> \theta_0$.  Then $\theta^*_l$ is uniformly most accurate at level $(1-\alpha)$.  
+**Proof**  Omitted by professor
+
+**February 03, 2016**  
+We now look at general methods and results when using the likelihood ratio test.  
+
+A couple of notes on the power of the likelihood ratio test  
+
+1) Generally not optimal in situations where the hypotheses are not simple; however the cases where it is not optimal tend to be the cses where no optimal test exists (by optimal we mean power).
+
+2) Up to now, we have been looking at one parameter models; these type of optimal tests do not exist for models with more than one parameter.  
+
+The general framework is similar to what we saw before.  We have observations $\mathbf{X} = (X_1, \dots X_n)$ with joint density or mass function (aka frequency function) $f(\mathbf{x}|\theta)$ where $\theta \in \Theta$ with $\Theta = \Theta_0 \cup \Theta_1$; and we wish to test $H_0: \theta \in \Theta_0$ vs. $H_1:\theta \in \Theta_1$.
+
+In the case of a composite hypothesis, we do this by evaluating each likelihood at the value $\theta$ that maximizes it yielding the generalized likelihood ratio
+\[
+\Lambda^* =\frac{\max_{\theta \in \Theta_0}L(\theta)}{\max_{\theta \in \Theta_1} L(\theta)}
+\]
+for which small values favor $H_1$.
+
+Typically, we rather use the statistic
+\[
+\Lambda=\frac{\max_{\theta \in \Theta_0}L(\theta)}{\max_{\theta \in \Theta}L(\theta)}
+\]
+The denominator represents the unrestricted maximum of the entire space, including $\Theta_0$.  
+
+Note that by doing this, $\Lambda$ is confined to values between 0 and 1.  
+
+**Example**  Let $X_1, \dots, X_n$ be i.i.d. normal with mean $\mu$ and variance $\sigma^2$ (both unknown) and suppose we want to test $H_0: \mu=\mu_0$ vs. $H_1: \mu \neq \mu_0$.  We have seen the MLEs of $\mu$ and $\sigma^2$.
+\[
+\hat{\mu}=\overline{X} \ \ \text{and} \ \ \hat{\sigma}^2=\frac{1}{n}\sum_{i=1}^n (X_i - \overline{X})^2
+\]
+while under $H_0$, $\mu=\mu_0$, and the MLE of $\sigma^2$ is 
+\[
+\hat{\sigma}^2_0 = \frac{1}{n}\sum_{i=1}^n (X_i - \mu_0)^2
+\]
+Notice that under $H_0$, 
+\[
+\begin{aligned}
+L(\mu_0, \hat{\sigma}_0^2) &= (\hat{\sigma}_0^2 2\pi)^{-n/2}\exp\bigg(-\sum_{i=1}^n \frac{(X_i - \mu_0)^2}{2\hat{\sigma}_0^2}\bigg) \\
+  &= (\hat{\sigma}^2_0 2 \pi)^{-n/2} e^{-n/2}
+\end{aligned}
+\]
+and similarly
+\[
+L(\hat{\mu}, \hat{\sigma}^2) =(\hat{\sigma}^2 2 \pi)^{-n/2} e^{-n/2}
+\]
+So the generalized likelihood ratio (LR) is
+\[
+\begin{aligned}
+\Lambda &=\frac{(\hat{\sigma}_0^2 2\pi)^{-n/2}e^{-n/2}}{(\hat{\sigma}^2 2\pi)^{-n/2}e^{-n/2}} \\
+ &= \bigg(\frac{\hat{\sigma}_0^2}{\hat{\sigma}^2}\bigg)^{-n/2}
+\end{aligned}
+\]
+And so the likelihood ratio test will reject $H_0$ when $\Lambda \leq k$, where $k$ is calculated so that the test has level $\alpha$.  The distribution of $\Lambda$ is not obvious, but note that $\Lambda$ is a montonic function of $\hat{\sigma}_0^2/\hat{\sigma}^2$ and 
+\[
+\begin{aligned}
+\frac{\hat{\sigma}_0^2}{\hat{\sigma}^2} &= \frac{\frac{1}{n}\sum_{i=1}^n (X_i - \mu_0)^2}{\frac{1}{n}\sum_{i=1}^n (X_i - \overline{X})^2} \\
+  &= 1 + \frac{n(\overline{X} - \mu_0)^2}{\sum_{i=1}^n (X_i - \overline{X})^2} \\
+  &=1 + \frac{1}{n-1}\bigg(\frac{n(\overline{X} - \mu_0)^2}{s^2}\bigg) \\
+  &= 1 + \frac{T^2}{n-1} 
+\end{aligned}
+\]
+where $T=\frac{\overline{X}-\mu}{s/\sqrt{n}}$ and $s$ is the usual sample standard deviation.  We know that, under $H_0$, $T$ has *t*-distribution with $df=n-1$ so that $T^2 \sim F_{(1,n-1)}$.
+
+Since $\Lambda$ is small when $T^2$ is large, we reject for large values of $T^2$ (or $|T|$).
+
+###Large Sample Theory  
+**Theorem**: Suppose that $X_1, \dots, X_n$ are i.i.d. random variables with density or mass function satisfying the usual conditions under the MLE framework (these are technical).  If the MLE $\hat{\theta}_n$ satisfies $\sqrt{n}(\hat{\theta}_n - \theta) \xrightarrow{d} N\Big(0, \frac{1}{I(\theta)}\Big)$, then the likelihood ratio statistic $\Lambda$ for testing $H_0: \theta = \theta_0$ satisfies
+\[
+-2\ln\Lambda = -2\Big[\max_{\theta \in \Theta_0} \ell(\theta) - \max_{\theta \in \Theta} \ell(\theta)\Big] \xrightarrow{d} v \sim \chi^2_{(1)}
+\]
+when $H_0$ is true.
+
+**Proof** Let $\ell(\theta) = \ln(f(x;\theta))$ and let $\ell'(\theta), \ell''(\theta)$ be its derivatives with respect to $\theta$.  Under the conditions of the theorem, 
+\[
+\begin{aligned}
+&\sqrt{n}(\hat{\theta}_n - \theta) \xrightarrow{d} N\bigg(0, \frac{1}{I(\theta)}\bigg) \\
+\Rightarrow &\Big[\sqrt{I(\theta)}\sqrt{n}(\hat{\theta}_n -\theta)\Big]^2 \xrightarrow{d} v \sim \chi^2_{(1)} \\
+\Rightarrow &n(\hat{\theta}_n - \theta)^2 \xrightarrow{d} \frac{v}{I(\theta)}
+\end{aligned}
+\]
+Taking the natural log and doing a Taylor series expansion,
+\[
+\begin{aligned}
+-\ln\Lambda &= \sum_{i=1}^n [\ell(\hat{\theta}_n) - \ell(\theta_0)] \\
+  &= (\theta_0 - \hat{\theta}_n) \sum_{i=1}^n \ell' (\hat{\theta}_n) - \frac{1}{2}(\theta_0 - \hat{\theta}_n)^2 \sum_{i=1}^n \ell''(\theta^*_n) \\
+  &= -\frac{1}{2}n(\hat{\theta}_n - \theta_0)^2 \frac{1}{n} \sum_{i=1}^n \ell'' (\theta^*_n)
+\end{aligned}
+\]
+where $\theta^*_n$ lies between $\hat{\theta}_n$ and $\theta_0$.  Furthermore, when $H_0$ is true,  
+\[
+-\frac{1}{n} \sum_{i=1}^n \ell''(\theta^*_n) \xrightarrow{p} - E_{\theta_{0}}[\ell''(\theta_0)]=I(\theta_0)
+\]
+Since $n(\hat{\theta}_n - \theta_0)^2 \xrightarrow{d} \frac{v}{I(\theta_0)}$, the conclusion follows by Slutsky's theorem.
+
+Note: This does have a multidimensional parameter space generalization that we will not discuss.
+
+**Example**  (Geometric Distribution) Consider testing $H_0:p=0.2$ with a sample of $n=20$ observations from a geometric distribution, and suppose the sample mean is $\overline{X}=3$.
+\[
+\begin{aligned}
+L(p) &= (1-p)^{\sum x_i -n}p^n \\
+  &= (1-p)^{\sum x_i -20} p^{20} \\
+  &= \bigg(\frac{p}{1-p}\bigg)^{20} (1-p)^{20\overline{X}}
+\end{aligned}
+\]
+The value under $H_0$ is $\ln(L(0.2))=-41.11$  
+Its unrestricted maximum value attained at the MLE, is $\ln(L(\frac{1}{3}))=-38.19$  
+Minus twice the difference yields
+\[
+-2(-41.11 -(-38.19)) = 5.84
+\]
+which under $H_0$, approximately follows $\chi^2_{(1)}$.  Then our p-value is
+\[
+P(\chi^2_{(1)} > 5.84) = 0.016
+\]
