@@ -10,7 +10,6 @@
 
 <meta name="author" content="Daniel Park" />
 
-<meta name="date" content="2016-02-29" />
 
 <title>STAT 6502 HW #4</title>
 
@@ -64,7 +63,7 @@ img {
 <div id="header">
 <h1 class="title">STAT 6502 HW #4</h1>
 <h4 class="author"><em>Daniel Park</em></h4>
-<h4 class="date"><em>February 29, 2016</em></h4>
+<h4 class="date"><em>March 2, 2016</em></h4>
 </div>
 
 
@@ -115,6 +114,7 @@ t &amp;= \frac{\overline{X} - \overline{Y}}{s_{(\overline{X} - \overline{Y})}} \
 <li><p>Would the hypothesis that the means were the same versus a two-sided alternative be rejected at the significance level <span class="math">\(\alpha=0.1\)</span>?<br /><strong>Solution</strong><br />The <em>p</em>-value indicates that the test statistic falls within the accenptance region if the significance level were <span class="math">\(\alpha=0.1\)</span>. So the null hypothesis is not rejected.</p></li>
 <li><p>Suppose you know that the variance of the normal distribution was <span class="math">\(\sigma^2=1\)</span>. How would your answers to the preceding questions change?<br /><strong>Solution</strong><br />The <em>t</em>-distribution is used when the population variance is unknown. When it is known, we may use the normal distribution.</p></li>
 </ol>
+<p><strong>Calculate confidence band</strong></p>
 </div>
 <div id="section-2" class="section level3">
 <h3>11.2</h3>
@@ -201,15 +201,15 @@ Z   &amp;&gt; z_{(\alpha)} - \frac{(\mu_X - \mu_Y)}{\sigma \sqrt{2/n}} \\
 \end{aligned}
 \]</span> Plug in our known values <span class="math">\[
 \begin{aligned}
-0.5 &amp;= 1 - \Phi\bigg[z_{(0.1)} - \frac{2}{10} \sqrt{\frac{n}{2}}\bigg] \\
-0.5 &amp;= \Phi\bigg[1.28 - \sqrt{\frac{n}{10}}\bigg]
+0.5 &amp;= 1 - \Phi\bigg[z_{(0.10)} - \frac{2}{10 \sqrt{2/n}}\bigg] \\
+\Phi\bigg[1.28 - \frac{1}{5 \sqrt{2/n}}\bigg] &amp;= 0.5
 \end{aligned}
 \]</span> Since 0.5 is the median we know that <span class="math">\(\Phi(0)=0.5\)</span>. So <span class="math">\[
 \begin{aligned}
-0 &amp;= 1.28 - \sqrt{\frac{n}{10}} \\
-n &amp;= 16.384
+0 &amp;= 1.28 - \frac{1}{5 \sqrt{2/n}} \\
+n &amp;= 81.92
 \end{aligned}
-\]</span></p>
+\]</span> So <span class="math">\(n\)</span> should be at least <span class="math">\(82\)</span>.</p>
 </div>
 <div id="section-7" class="section level3">
 <h3>11.19</h3>
@@ -270,8 +270,15 @@ P(X&lt;Y) &amp;= P(Y-X &gt; 0) \\
 <h3>11.34</h3>
 <p>This problem contrasts the power functions of paired and unpaired designs. Graph and compare the power curves for testing <span class="math">\(H_0: \mu_X=\mu_Y\)</span> for the following two designs.</p>
 <ol style="list-style-type: lower-alpha">
-<li>Paired: Cov<span class="math">\((X_i, Y_i)=50, \sigma_X=\sigma_Y=10, i=1, \dots, 25\)</span>.</li>
-<li>Unpaired: <span class="math">\(X_1, \dots, X_{25}\)</span> and <span class="math">\(Y_1, \dots, Y_{25}\)</span> are independent with variance as in part (a).</li>
+<li>Paired: Cov<span class="math">\((X_i, Y_i)=50, \sigma_X=\sigma_Y=10, i=1, \dots, 25\)</span>.<br /><strong>Solution</strong><br /><span class="math">\(\rho = \frac{\sigma_{XY}}{\sigma_X \sigma_Y}\)</span>, so <span class="math">\(\rho=0.5\)</span>.<br /><span class="math">\(\text{Var}(\overline{D}) = \frac{1}{n}(\sigma^2_X + \sigma^2_Y - 2 \rho \sigma_X\sigma_Y)=\frac{1}{25}(100 + 100 - 2 \cdot 0.5 \cdot 10 \cdot 10) = 4\)</span></li>
+</ol>
+<pre class="r"><code>curve(pnorm(-1.96*2,mean=x,sd=2) + pnorm(1.96*2, mean=x, sd=2, lower.tail=F), from=-10, to=10)
+
+curve(pt(x/2, df=24) + pt(x/2, df=24, lower.tail=F), from=-0.1, to=.1)
+
+pt(.01, 24)</code></pre>
+<ol start="2" style="list-style-type: lower-alpha">
+<li>Unpaired: <span class="math">\(X_1, \dots, X_{25}\)</span> and <span class="math">\(Y_1, \dots, Y_{25}\)</span> are independent with variance as in part (a).<br /><strong>Solution</strong><br />If <span class="math">\(X\)</span> and <span class="math">\(Y\)</span> are independent, then <span class="math">\(\sigma_{XY}=\rho=0\)</span>. So<br /><span class="math">\(\text{Var}(\overline{D}) = \frac{1}{n}(\sigma^2_X + \sigma^2_Y - 2 \rho \sigma_X\sigma_Y)=\frac{1}{25}(100 + 100 - 2 \cdot 0 \cdot 10 \cdot 10) = 8\)</span></li>
 </ol>
 </div>
 <div id="section-10" class="section level3">
@@ -354,7 +361,11 @@ qplot(x=control, y=difference, data=phone)</code></pre>
 </ol>
 <p>Mean difference:</p>
 <p>Standard deviation:</p>
-<p>95% Confidence interval:</p>
+<pre class="r"><code>(sd.dbar &lt;- sqrt(var(phone$difference)/nrow(phone)))</code></pre>
+<pre><code>## [1] 202.533</code></pre>
+<p>95% Confidence interval: <span class="math">\[
+\overline{D} \pm  t_{(n-1, \alpha/2)}s_{\overline{D}}
+\]</span></p>
 <ol start="3" style="list-style-type: lower-alpha">
 <li>Calculate the median difference and a confidence interval and compare to the previous result.<br /></li>
 <li>Do you think it is more appropriate to use a <em>t</em> test or a nonparametric method to test whether the apparent difference between test and control could be due to chance? Why? Carry out both tests and compare.</li>
