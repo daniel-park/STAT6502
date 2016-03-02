@@ -171,7 +171,7 @@ s^2_p\bigg(\frac{1}{n} + \frac{1}{m}\bigg) &amp;=
 <p>An experiment to determine the efficacy of a drug for reducing high blood pressure is performed using four subjects in the following way: two of the subjects are chosen at random for the control group and two for the treatment group. During the course of treatment with the drug, the blood pressure of each of the subjects in the treatment group is measured for ten consecutive days as is the blood pressure of each of the subjects in the control group.</p>
 <ol style="list-style-type: lower-alpha">
 <li><p>In order to test whether the treatment has an effect, do you think it is appropriate to use the two-sample <em>t</em> test with <span class="math">\(n=m=20\)</span>?<br /><strong>Solution</strong><br />No. If <span class="math">\(n=m=20\)</span> each sample represents an observation for one patient on one specific day. When the observations concern a single person, the samples are not independent An observation on one day would likely be correlated for a different day (for the same patient). Therefore, a two sample <em>t</em> test would not be appropriate.</p></li>
-<li><p>Do you think it is appropriate to use the Mann-Whitney test with <span class="math">\(n=m=20\)</span>?<br /><strong>Solution</strong><br />Sure, why not?</p></li>
+<li><p>Do you think it is appropriate to use the Mann-Whitney test with <span class="math">\(n=m=20\)</span>?<br /><strong>Solution</strong><br />No. The Mann-Whitney test involves creating ranks, and it is compared to a distribution where any permutation is equally likely. This is not the case here. The observations are not independent.</p></li>
 </ol>
 </div>
 <div id="section-5" class="section level3">
@@ -272,7 +272,7 @@ n &amp;= 81.92
 <p>If <span class="math">\(X \sim N(\mu_X, \sigma_X^2)\)</span> and <span class="math">\(Y\)</span> is independent <span class="math">\(N(\mu_Y, \sigma_Y^2)\)</span>, what is <span class="math">\(\pi=P(X&lt;Y)\)</span> in terms of <span class="math">\(\mu_X, \mu_Y, \sigma_X,\)</span> and <span class="math">\(\sigma_Y\)</span>?<br /><strong>Solution</strong><br />We know that the sum/difference of random variables from a normal distribution also follow a normal distribution. In this case <span class="math">\[
 Y-X \sim N(Y-X, \sigma^2_Y + \sigma^2_X)
 \]</span> Then converting <span class="math">\(Y-X\)</span> into a standard normal distribution: <span class="math">\[
-\frac{(Y-X) - (\mu_Y - \mu_X)}{\sigma^2_Y + \sigma^2_X} \sim N(0,1)
+\frac{(Y-X) - (\mu_Y - \mu_X)}{\sqrt{\sigma^2_Y + \sigma^2_X}} \sim N(0,1)
 \]</span> So then we have: <span class="math">\[
 \begin{aligned}
 P(X&lt;Y) &amp;= P(Y-X &gt; 0) \\
@@ -287,7 +287,7 @@ P(X&lt;Y) &amp;= P(Y-X &gt; 0) \\
 <h3>11.34</h3>
 <p>This problem contrasts the power functions of paired and unpaired designs. Graph and compare the power curves for testing <span class="math">\(H_0: \mu_X=\mu_Y\)</span> for the following two designs.</p>
 <ol style="list-style-type: lower-alpha">
-<li>Paired: Cov<span class="math">\((X_i, Y_i)=50, \sigma_X=\sigma_Y=10, i=1, \dots, 25\)</span>.<br /><strong>Solution</strong><br /><span class="math">\(\rho = \frac{\sigma_{XY}}{\sigma_X \sigma_Y}=\frac{50}{10 \cdot 10}\)</span><br /><span class="math">\(\text{Var}(\overline{D}) = \frac{1}{n}(\sigma^2_X + \sigma^2_Y - 2 \rho \sigma_X\sigma_Y)=\frac{1}{25}(100 + 100 - 2 \cdot 0.5 \cdot 10 \cdot 10) = 4\)</span><br />A</li>
+<li>Paired: Cov<span class="math">\((X_i, Y_i)=50, \sigma_X=\sigma_Y=10, i=1, \dots, 25\)</span>.<br /><strong>Solution</strong><br /><span class="math">\(\rho = \frac{\sigma_{XY}}{\sigma_X \sigma_Y}=\frac{50}{10 \cdot 10}\)</span><br /><span class="math">\(\text{Var}(\overline{D}) = \frac{1}{n}(\sigma^2_X + \sigma^2_Y - 2 \rho \sigma_X\sigma_Y)=\frac{1}{25}(100 + 100 - 2 \cdot 0.5 \cdot 10 \cdot 10) = 4\)</span></li>
 </ol>
 <pre class="r"><code>library(ggplot2)
 ggplot(data.frame(x=c(-10, 10)), aes(x)) + 
