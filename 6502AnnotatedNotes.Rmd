@@ -1,0 +1,3324 @@
+---
+title: "STAT 6502 Annotated Class Notes"
+author: "Daniel Park"
+date: '`r Sys.Date()`'
+output:
+  html_document: default
+  pdf_document: default
+header-includes:
+- \usepackage{bbm}
+- \usepackage{framed}
+---
+
+**January 04, 2016**
+
+###Chapter 10: Data Summary  
+We now tackle the problem of estimating the behavior of a random variable where we have no (or very little) information about the population that the measurements came from.
+
+Recall the population is uniquely defined by the cumulative distribution.
+
+The cumulative distribution of $X$ evaluated at $x$ is $P(X \leq x)$.
+
+In statistics, we assume that the sample well represents the population.
+
+Functions of a random variable in a sample should be similar to that of the population (e.g. the sample mean to the population mean).  
+
+**Empirical Cumulative Distribution Function**  
+This is the estimator of the cdf, abbreviated as ecdf, and is defined as
+$$F_n(x) = \frac{1}{n} \cdot (\text{number of} \ x_i\text{'s that are equal to or less than} \ x)$$
+and has the properties
+
+- let the ordered observations be $x_{(1)}, x_{(2)}, ... , x_{(n)}$.  Then for $x < x_{(1)}, F_n(x) = \frac{1}{n}0= 0$.  
+- for $x_{(k)} \leq x < x_{(k+1)}, F_n(x)=\frac{k}{n}$.  
+- if there are $r$ observations with the value $x$, then $F_n(x)$ has a jump of $\frac{r}{n}$ at $x$.  
+
+We can show the ecdf is a consistent estimator of the cdf.
+
+As $n$ approaches infinity, for fixed $\epsilon > 0$, Chebyshev's inequality gives
+$$
+\begin{aligned}
+\lim_{n \to \infty} P\big(\big|F_n(x)-F(x) \big|<\epsilon\big) &= \lim_{n \to \infty} P\bigg(\bigg|\frac{Y}{n}-p\bigg| < \epsilon\bigg) \\
+                                              &\geq \lim_{n \to \infty} \bigg(1 - \frac{p(1-p)}{n\epsilon^2}\bigg) \\
+                                              &= 1
+\end{aligned}
+$$
+
+Therefore,
+$$\lim_{n \to \infty} P\big(\big|F_n(x) - F(x)\big| < \epsilon \big) = 1$$
+
+$\Big($ The derivation resulted in the inequality $\lim_{n \to \infty} P\big(\big|F_n(x) - F(x)\big| < \epsilon \big) \geq 1$.  However, since probabilities cannot exceed 1, the inequality becomes  $\lim_{n \to \infty} P\big(\big|F_n(x) - F(x)\big| < \epsilon \big) = 1$.$\Big)$
+
+Since $F_n(x) = \hat{p}$ is the proportion of times that $X \leq x$, we may rely on the Weak Law of Large Numbers (WLLN), which states that $F_n(x)$ will converge in probability to $F(x)=p$, or $F_n(x) \xrightarrow{p} F(x)$.
+
+Reminder: $\xrightarrow{p}$ means that it converges in probability.
+
+In fact, the consistency of $F_n$ holds uniformly over the real line
+$$\sup_{- \infty < x < \infty} \big|F_n(x) - F(x) \big| \xrightarrow{p} 0$$
+
+Demonstration in R: 
+```{r}
+# randomly selecting numbers, intentionally including two 16s:
+x <- c(16, 16, 14, 3.5, -1, 2.2, 35, 47, 50, 21)
+plot(ecdf(x))
+# Repeat, but this time randomly generate the numbers.
+# We generate 30 observations, each with 20 trials.
+# The expected value of each observation is 6; that is, with a probability
+#   of 0.3, we expect 6 successes from 20 trials.
+y <- rbinom(n=30, size=20, prob=.3)
+y
+plot(ecdf(y), xlim=c(0,20))
+
+# actual distribution:
+points(x=0:20, y=pbinom(q=0:20, size=20, prob=.3), col='red') 
+#lines(x=0:20, y=pbinom(q=0:20, size=20, prob=.3), col='red') 
+```
+
+For mathematical purposes, it is convenient to express $F_n$ as 
+$$F_n(x) = \frac{1}{n} \sum_{i=1}^n \textbf{I}_{(-\infty, x]}(X_i)$$
+where $\textbf{I}$ is the usual indicator function.
+$$
+\textbf{I}_{(-\infty, x]}(X_i)=\begin{cases}
+                              1, \text{if} \ X_i \leq x \\
+                              0, \text{if} \ X_i > x
+                               \end{cases}
+$$
+
+Writing it in this way, we see that $\textbf{I}_{(-\infty, x]}(X_i)$ is a Bernoulli random variable with
+$$P(\textbf{I}_{(-\infty, x]}(X_i) = 1) = F(x)$$
+$$\text{and}$$
+$$P(\textbf{I}_{(-\infty, x]}(X_i) = 0) = 1 - F(x)$$
+
+```{r eval=FALSE, echo=FALSE}
+# Note use \mathbbm{1} to make it correctly formatted as a pdf
+```
+
+
+As an estimator, the ecdf is not only consistent, it is unbiased, and its variance gets smaller the further $x$ is from the median.
+
+
+**January 06, 2016**  
+
+**Mean and Variance**  
+Problem: Show that the ecdf is unbiased for the cdf.
+$$
+\begin{aligned}
+E(F_n) &= E\bigg[\frac{1}{n} \sum_{i=1}^n \textbf{I}_{(-\infty,x]}(X_i)\bigg] \\
+       &= \frac{1}{n}nE[\textbf{I}_{(-\infty,x]}(X_i)] \\
+       &= P(X_i \leq x) \\
+       &= F(x)
+\end{aligned}
+$$
+For the variance, note that since $\textbf{I}_{(-\infty,x]}(X_i)$ can only take values 0 or 1, $E[(\textbf{I}_{(-\infty,x]}(X_i))^2] = E[\textbf{I}_{(-\infty,x]}(X_i)]$ which is equal to $P(X_i \leq x)$.  
+
+Therefore,  
+$$
+\begin{aligned}
+\text{Var}(F_n(x)) &= E[F^2_n(x)]-[E(F_n(x))]^2 \\
+                   &= E\bigg[\frac{1}{n^2} \sum_{i=1}^n \textbf{I}_{(-\infty,x]}(X_i) \sum_{j=1}^n \textbf{I}_{(-\infty, x]}(X_j)\bigg]-F^2(x) \\
+                   &= \frac{1}{n^2} \sum_{i=1}^n \sum_{j=1}^n[P(X_i \leq x, X_j \leq x)-F^2(x)] \\
+                   &= \frac{1}{n^2} \sum_{i=1}^n F(x)(1-F(x))+ \frac{1}{n^2} \sum_{i \neq j}[F_{X_iX_j}(x,x)-F^2(x)]
+\end{aligned}
+$$
+If they are independent, then
+$$F_{X_iX_j}(x,x)=F^2(x)$$
+which means that
+$$\sum_{i \neq j}[F_{X_iX_j}(x,x)-F^2(x)] = 0$$
+So,
+$$
+\begin{aligned}
+\text{Var}(F_n(x)) &= \frac{1}{n^2} \sum_{i=1}^n F(x)(1-F(x)) \\
+                   &= \frac{1}{n} F(x)(1-F(x))
+\end{aligned}
+$$
+
+It is clear that the variance hits its maximum when $F(x)=0.5$, otherwise known as the median.  
+
+Also, $\text{Var}(F_n(x))$ gets smaller as you go away from the median.  
+
+A drawback is that the ecdf is always a step-function, whereas the cdf of a continuous distribution is not, so we may lose out on important features.  
+
+```{r}
+curve(pnorm, -3, 3) # cdf of normal dist
+x <- rnorm(300) # 300 observations
+plot(ecdf(x))
+curve(pnorm, -3,3,add=TRUE,col='red') # true cdf
+```
+
+The plotted ecdf are steps.  Note that typically the true cdf is unknown (which is why we're interested in the estimator ecdf).
+
+As an estimator, the ecdf can be used to estimate many functional parameters of $F$.  
+
+**Example**  
+Suppose that
+$$\theta(F)=\int_{-\infty}^{\infty} h(x)dF(x)$$
+which is essentially $E[h(x)]$.  
+
+Substituting $F_n$ for $F$, we get
+$$
+\begin{aligned}
+\hat{\theta} &= \theta(F_n) \\
+             &= \int^{\infty}_{-\infty} h(x)dF_n(x) \\
+             &= \frac{1}{n} \sum_{i=1}^n h(x_i)
+\end{aligned}
+$$
+which is simply the sample mean of $h(x_1), h(x_2),...,h(x_n)$.  
+
+Here, $\theta=\theta(F)$ is the true value of the parameter, and $\hat{\theta}=\theta(F_n)$ is its estimator.
+
+**Example**  
+Suppose that $\theta(F)=\text{Var}(X)$ where $X \sim F$.
+$$\theta(F)=\int^{\infty}_{-\infty} x^2 dF(x)-\bigg(\int_{-\infty}^{\infty}xdF(x)\bigg)^2$$
+and we get
+$$
+\begin{aligned}
+\hat{\theta} &= \theta(F_n) \\
+             &= \frac{1}{n}\sum_{i=1}^n x_i^2-\bigg(\frac{1}{n}\sum_{i=1}^n x_i\bigg)^2 \\
+             &= \frac{1}{n} \sum_{i=1}^n \big(x_i-\overline{X}\big)^2
+\end{aligned}
+$$
+
+**Survival**  
+The survival function is defined as
+$$S(t)=P(T>t)=1-F(t)$$  
+where $T$ is a random variable with cdf $F$.  
+
+This is commonly found in biostatistics and reliability theory as $S(t)$ represents the probability that the lifetime will be longer than $t$.
+
+From our prevous discurssion, the intuitive estimator of the survival function is
+$$S_n(t)=1-F_n(t)$$
+which is consistent and unbiased, the proportion of the data greater than $t$.  
+
+```{r eval=FALSE, echo=FALSE}
+library(ggplot2)
+library(reshape2)
+library(survival)
+library(ggfortify)
+raw1 <- "
+76
+93
+97
+107
+108
+113
+114
+119
+136
+137
+138
+139
+152
+154
+154
+160
+164
+164
+166
+168
+178
+179
+181
+181
+183
+185
+194
+198
+212
+213
+216
+220
+225
+225
+244
+253
+256
+259
+265
+268
+268
+270
+283
+289
+291
+311
+315
+326
+326
+361
+373
+373
+376
+397
+398
+406
+452
+466
+592
+598
+"
+
+raw2 <- "
+72
+72
+78
+83
+85
+99
+99
+110
+113
+113
+114
+114
+118
+119
+123
+124
+131
+133
+135
+137
+140
+142
+144
+145
+154
+156
+157
+162
+162
+164
+165
+167
+171
+176
+177
+181
+182
+187
+192
+196
+211
+214
+216
+216
+218
+228
+238
+242
+248
+256
+257
+262
+264
+267
+267
+270
+286
+303
+309
+324
+326
+334
+335
+358
+409
+473
+550
+"
+
+raw3 <- "
+10
+33
+44
+56
+59
+72
+74
+77
+92
+93
+96
+100
+100
+102
+105
+107
+107
+108
+108
+108
+109
+112
+113
+115
+116
+120
+121
+122
+122
+124
+130
+134
+136
+139
+144
+146
+153
+159
+160
+163
+163
+168
+171
+172
+176
+183
+195
+196
+197
+202
+213
+215
+216
+222
+230
+231
+240
+245
+251
+253
+254
+254
+278
+293
+327
+342
+347
+361
+402
+432
+458
+555
+"
+
+raw4 <- "
+43
+45
+53
+56
+56
+57
+58
+66
+67
+73
+74
+79
+80
+80
+81
+81
+81
+82
+83
+83
+84
+88
+89
+91
+91
+92
+92
+97
+99
+99
+100
+100
+101
+102
+102
+102
+103
+104
+107
+108
+109
+113
+114
+118
+121
+123
+126
+128
+137
+138
+139
+144
+145
+147
+156
+162
+174
+178
+179
+184
+191
+198
+211
+214
+243
+249
+329
+380
+403
+511
+522
+598
+"
+
+raw5 <- "
+12
+15
+22
+24
+24
+32
+32
+33
+34
+38
+38
+43
+44
+48
+52
+53
+54
+54
+55
+56
+57
+58
+58
+59
+60
+60
+60
+60
+61
+62
+63
+65
+65
+67
+68
+70
+70
+72
+73
+75
+76
+76
+81
+83
+84
+85
+87
+91
+95
+96
+98
+99
+109
+110
+121
+127
+129
+131
+143
+146
+146
+175
+175
+211
+233
+258
+258
+263
+297
+341
+341
+376
+"
+
+rawcontrol <- "
+18
+36
+50
+52
+86
+87
+89
+91
+102
+105
+114
+114
+115
+118
+119
+120
+149
+160
+165
+166
+167
+167
+173
+178
+189
+209
+212
+216
+273
+278
+279
+292
+341
+355
+367
+380
+382
+421
+421
+432
+446
+455
+463
+474
+506
+515
+546
+559
+576
+590
+603
+607
+608
+621
+634
+634
+637
+638
+641
+650
+663
+665
+688
+725
+735
+"
+
+guinea.pig <- data.frame(control=c(read.table(text=rawcontrol)$V1, rep(NA, 7)),
+                         dose1=c(read.table(text=raw1)$V1, rep(NA, 12)),
+                         dose2=c(read.table(text=raw2)$V1, rep(NA, 5)),
+                         dose3=read.table(text=raw3)$V1,
+                         dose4=read.table(text=raw4)$V1,
+                         dose5=read.table(text=raw5)$V1
+                         )
+# Alternative: use scan to read in a column of text as a vector
+
+guinea.pig <- melt(guinea.pig, variable.name="category", value.name="lifetimes")
+guinea.surv <- survfit(Surv(lifetimes) ~ category, data = guinea.pig)
+autoplot(object=guinea.surv, conf.int=FALSE)
+
+ggplot(data=guinea.pig, aes(x=lifetimes,color=category)) + stat_ecdf(geom="step")
+```
+
+
+A survival function can be used to calculate the hazard function, which may be interpreted as the instantaneous death rate for individuals who have suvived up to a given time.
+
+For small $\delta$, we calculate the probability that the individual will die in the time interval $(t,t+\delta)$
+$$
+\begin{aligned}
+P(t\leq T \leq t + \delta | T>t) &= \frac{P(t \leq T \leq t+\delta)}{P(T>t)} \\
+                                 &= \frac{F(t+\delta)-F(t)}{1-F(t)} \\
+                                 &\approx \frac{\delta f(t)}{1-F(t)}
+\end{aligned}
+$$
+The hazard rate function is defined as $h(t)=\frac{f(t)}{1-F(t)}$ and alternatively expressed as
+$$h(t)=-\frac{d}{dt}\log(1-F(t)) = -\frac{d}{dt}\log(s(t))$$  
+
+**Example**  
+In R, plot the hazard rate function for the Weibull with $\alpha=1$ and $\beta=0.8,1.0,1.5$
+```{r}
+x <- seq(0,2,length=1000)
+plot(x,dweibull(x,0.8,1)/(1-pweibull(x,0.8,1)), type='l',ylab='')
+lines(x,dweibull(x,1,1)/(1-pweibull(x,1,1)),col='red')
+lines(x,dweibull(x,1.5,1)/(1-pweibull(x,1.5,1)),col='green')
+```
+
+**Problem**  
+Find the hazard rate function for exponentially distributed lifetimes.  What does this tell you?  
+$$
+\begin{aligned}
+h(t) &= \frac{f(t)}{1-F(t)} \\
+     &= \frac{\lambda e^{-\lambda t}}{1-(1-e^{-\lambda t})} \\
+     &= \lambda
+\end{aligned}
+$$
+
+**Density Estimation**  
+The glaring issue with using the ecdf as an estimator of $F$ arises when $F$ is continuous (since the ecdf is always a step function).
+
+In this situation, one way of deriving a smoothed estimate is using the kernel probability density estimate.  
+
+The idea is to use $w(x)$, where this function is a nonnegative, symmetric weight function, centered at zero and integrates to 1 (pdf).  
+
+**January 11, 2015**  
+This $w$ uses the $X_i$ to come up with a smoothed estimate at $x$.  
+
+However, we may not want to use values of $X_i$ that are too far from $X_j$ since those values won't tell us much about the distribution at $x$.  
+
+Even for those values not too far away from $x$, we would want to weight values closest to $x$ more than those that are further away.  
+
+Therefore, we need to decide on a bandwidth, $h$, and run this smoother in this bandwidth around $x$, on the known support $X$.
+
+The choice of $h$ can have a profound effect on the quality of the density estimate.  
+
+The choice of $h$ is problem specific.
+
+We can write this weight function as
+$$W_h(x) = \frac{1}{h}w\bigg(\frac{x}{h}\bigg)$$
+giving our estimate of $f$,
+$$
+\begin{aligned}
+f_h(x) &= \frac{1}{n}\sum_{i=1}^n W_h(x-X_i) \\
+  &= \frac{1}{nh}\sum_{i=1}^n w\bigg(\frac{x-X_i}{h}\bigg)
+\end{aligned}
+$$
+If $h$ is too small we will have undersmoothing, producing a rough $f$, not much different than the unsmoothed.
+
+If $h$ is too large, then we will have oversmoothing, possibly losing out on some features of the true $f$.  
+
+```{r}
+n <- 100
+x <- rchisq(n,8)
+#h <- 1
+h <- c(0.5, 1, 5)
+t <- seq(0,25, length=n)
+fhat1 <- matrix(0, nrow=n, ncol=length(h))
+
+plot(t, dchisq(t,8), type='l')
+
+for (j in 1:length(h)){
+  for (i in 1:n){
+		fhat1[i,j] = 1/(n*h[j])*sum(dnorm((t[i]-x)/h[j]))
+		}
+	lines(t, fhat1[,j], xlab='x', ylab='', col=j+1)
+	}
+	
+```
+
+Alternatively, we could use the `KernSmooth` library to accomplish the same thing.
+```{r eval=FALSE}
+# Alternatively
+
+plot(density(x))
+
+# or 
+
+library(KernSmooth)
+
+fhat3 <- bkde(x)
+plot(fhat3, xlab='x', ylab='',type='l')
+lines(t, dchisq(t,8), col='red')
+```
+
+
+
+###Nonparametric Bootstrap    
+Let $x_i,x_2,...,x_n$ be our sample.  
+
+A bootstrap sample is a SRS of $n$ observations, taken with replacement, from the original sample, say $x^*_1,x^*_2,...,x^*_n$.  
+
+Repeat this process a large number of times, $B$.  
+
+For each sample, calculate the statistic of interest.  
+
+The behavior of the statistic from bootstrap sample to bootstrap sample should be similar to the behavior of that statistic from sample to sample (sample distribution).  
+
+For a given bootstrap sample, $x_i$ is represented $r_i$ times.  
+
+Therefore, $\sum_{i=1}^n r_i=n$ and $r_i \sim \text{bin}\big(n, \frac{1}{n}\big)$.
+
+The mean and variance of $r_i$ can be determined by the standard formulas for the binomial distribution.
+$$E_B(r_i)= np = n\cdot\frac{1}{n}=1$$
+$$\text{Var}_B(r_i) = \frac{p(1-p)}{n}= \frac{\frac{1}{n}\big(1-\frac{1}{n}\big)}{n}=\frac{\frac{1}{n}\big(\frac{n-1}{n}\big)}{n} = \frac{n-1}{n}$$
+For $i\neq j, \ \text{Cov}(r_i,r_j)=\sigma_{ij}=-\frac{1}{n}$.  
+This implies $E_B(\sigma_i,\sigma_j)=1-\frac{1}{n}$.  
+Note: $r_i$'s are not independent b/c of the constraint $\sum_{i=1}^n r_i=n$.  If we knew, say, $r_1=5$, then we have some information about the distribution of the rest of the $r_i$'s.
+
+Derivation of $\text{Cov}(r_i,r_j)$: We can determine this by setting $\text{Var}_B\big(\sum_{i=1}^n r_i\big)$ to 0 since $\text{Var}_B\big(\sum_{i=1}^n r_i\big)=\text{Var}_B(n)$, where $n$ is a constant and the variance of a constant is zero. 
+$$
+\begin{aligned}
+0 &= \text{Var}_B\bigg(\sum_{i=1}^n r_i\bigg) \\
+  &= \sum_{i=1}^n \text{Var}_B(r_i) + \sum_{i=1}^n \sum_{j \neq i} \text{Cov}_B(r_i,r_j) \\
+  &= n\bigg(\frac{n-1}{n}\bigg)+n(n-1)\sigma_{ij} && \text{b/c} \ \text{Cov}_B(r_i,r_j)=\sigma_{ij} \\
+  &= (n-1)+n\sigma_{ij}(n-1) \\
+  &= 1+n\sigma_{ij} && \text{dividing equation by} \ (n-1) \\
+-n\sigma_{ij} &= 1 \\
+\sigma_{ij} &= -\frac{1}{n}
+\end{aligned}
+$$
+
+**Example**  
+In the following code, we generate 40 trials, each with 10 observations and success rate of 0.3.  From that pool of data, we sample from it to generate a binomial trial.  From each trial we calculate the standard deviation.  We do this 10,000 times and plot a histogram of our simulations.
+
+```{r fig.width=5, fig.height=4}
+x <- rbinom(n=40, size=10, prob=0.3)
+sdstar <- numeric(length=10000)
+for (i in 1:10000) {
+  sdstar[i] <- sd(sample(x=x, size=40, replace=TRUE))
+}
+hist(sdstar)
+```
+
+The distribution appears normal.
+
+**January 13, 2016**  
+**Mean**  
+The sample mean of a bootstrap sample is 
+$$\overline{X}^*=\frac{1}{n}\sum_{i=1}^nr_ix_i$$
+where $r_i$ is the number of observed values at $x_i$, and $x_i$ is treated as fixed.  
+
+So, because $E_B(r_i)=1 \ \Big(\sum_{i=1}^n r_i=n$ and $r_i \sim \text{bin}\big(n, \frac{1}{n}\big)\Big)$, 
+$$
+\begin{aligned}
+E_B\Big(\overline{X}^*\Big) &= E\bigg(\frac{1}{n}\sum_{i=1}^n r_ix_i\bigg) \\
+  &= \frac{1}{n}\sum_{i=1}^n E_B(r_i)x_i \\
+  &= \frac{1}{n}\sum_{i=1}^n x_i\cdot 1 \\
+  &= \overline{x}
+\end{aligned}
+$$
+and, because $\text{Cov}(x_i,x_j)=\frac{1}{n}$,
+$$
+\begin{aligned}
+\text{Var}_B\Big(\overline{X}^*\Big) &=\frac{1}{n^2}\sum_{i=1}^nx^2_i\text{Var}_B(r_i)+\frac{1}{n^2}\sum_{i=j}^n\sum_{j\neq i} \text{Cov}(r_ix_i,r_jx_j) \\
+  &= \frac{1}{n^2}\bigg[\sum_{i=1}^n x^2_i \bigg(\frac{n-1}{n}\bigg) + \sum_{i=1}^n\sum_{j \neq i}x_ix_j\bigg(-\frac{1}{n}\bigg)\bigg] \\
+    &= \frac{n-1}{n^2}s^{*2}
+\end{aligned}
+$$
+where 
+$$s^{*2}=\frac{\frac{n-1}{n}\sum_{i=1}^n x_i^2 -\frac{1}{n} \sum_{i=1}^n\sum_{j \neq i}x_i x_j}{n-1}$$
+Then the expected value is
+$$
+\begin{aligned}
+E\Big[E_B\Big(\overline{X}^*\Big)\Big] &= E\Big(\overline{X}\Big) \\
+  &=\mu
+\end{aligned}
+$$
+which is unbiased.
+
+The expeced value of $s^{*2}$
+$$
+\begin{aligned}
+E\big(s^{*2}\big) &= E\Bigg[\frac{\frac{n-1}{n}\sum_{i=1}^n x_i^2 -\frac{1}{n} \sum_{i=1}^n\sum_{j \neq i}x_i x_j}{n-1}\Bigg] \\
+  &= \frac{\frac{n-1}{n}\sum_{i=1}^n E(x_i^2) -\frac{1}{n} \sum_{i=1}^n\sum_{j \neq i}E(x_i x_j)}{n-1} \\
+  &= \frac{\frac{n-1}{n}\sum_{i=1}^n (\sigma^2 + \mu^2) -\frac{1}{n} \sum_{i=1}^n\sum_{j \neq i}E(x_i)E(x_j)}{n-1} \\
+  &= \sigma^2
+\end{aligned}
+$$
+Note that $E(x_i x_j)=E(x_i)E(x_j)$ because of independence.
+
+So $$E\Big[\text{Var}_B\Big(\overline{X}^*\Big)\Big]=\frac{n-1}{n^2}\sigma^2$$
+Therefore the bias is $$\text{bias}_{\sigma^2_{\overline{X}^*}}=-\frac{1}{n^2}\sigma^2$$
+
+**Example**  Compare CIs for the median and mean using bootstrap and classical methods assuming normality.  
+```{r}
+x <- rnorm(40, 12, 2)
+medstar <- numeric(100000)
+for (i in 1:10000) {medstar[i] <- median(sample(x, replace=TRUE))}
+hist(medstar, freq=FALSE)
+quantile(medstar, c(0.025, 0.975))
+# we can do the following b/c of the histogram appears normal
+median(x) + c(-1.96, 1.96)*sd(medstar) # semiparamtric
+# In STAT 6304 we would do:
+median(x) + c(qt(0.025, 39), qt(0.975, 39))*sd(x)/40
+```
+Use the bootstrap method if you cannot assume normality and the sample size is too small.
+
+Using `boot` library
+```{r}
+library(boot)
+fun.data <- function(w,i){median(w[i])}
+y <- boot(x, fun.data, 1000)
+boot.ci(y)
+```
+
+**Example** Suppose the population is exponential so that
+$$f(x;\lambda)=\lambda e^{-\lambda x}$$
+Create a 95% CI for the population median
+$$
+\begin{aligned}
+  & F(t) = 0.5 \\
+\Leftrightarrow  & 1-e^{-\lambda t} = 0.5 \\
+\Leftrightarrow  & e^{-\lambda t} = 0.5 \\
+\Leftrightarrow  & -\lambda t = \ln(0.5) \\
+\Leftrightarrow  & t = -\frac{1}{\lambda}\ln(0.5)
+\end{aligned}
+$$
+
+```{r}
+q <- rexp(250, rate=17)
+1/17*log(.5)
+y <- boot(q, fun.data, 10000)
+boot.ci(y)
+```
+
+**January 20, 2016**  
+
+###Chapter 9: Hypothesis Testing
+
+A different way of looking at something we've already seen.  
+
+Suppose we have data generated as realizations of a random variable from a particular distribution parameterized by $\theta$.  
+
+In addition, suppose we believe that there are only two possible values for $\theta$, say $\theta_1$ and $\theta_2$.  How do you decide which of these is the true $\theta$?  
+
+From last quarter, we could calculate the likelihood of our data under both values of $\theta$, and select the one that has the larger likelihood.  
+
+What we will do now is to take the ratio of those likelihood functions evaluated at the two $\theta$s and make our decision based on the value of this ratio.
+
+**Example**  Suppose two siblings have identical phones.  The only observable difference is that the older one gets, on average, one text per hour whereas the younger gets, on average, 1.5 texts per hour.  In a rush to get to school, you see both phones next to each other and decide to take one of the phones.  After having the phone for 8 hours, how should you decide whose phone you took?  
+
+Let $x$ denote the number of texts that arrive in 8 hours.  We have a Poisson distribution - we are given a rate and finite period of time.
+
+Recall the Poisson pmf:
+\[f(X=x)=\frac{\lambda^x e^{-\lambda}}{x!}\]
+
+The parameter $\lambda$ represents the rate in a specified physical area or time frame.  Here, $\lambda=8$ for the older child (8 texts in an 8-hour period) and $\lambda=12$ for the younger child.
+
+To get an idea about the distributions:
+```{r fig.width=4, fig.height=3}
+x <- 0:15 # considering probabilities for each of these counts
+plot(x, dpois(x=x, lambda=8), type='h') # older child's phone
+plot(x, dpois(x=x, lambda=12), type='h') #younger child's phone
+```
+
+Suppose we observed 9 text messages.
+
+Poisson pmf: $f(X=x)=\frac{\lambda^x e^{-\lambda}}{x!}$  
+Likelihood:
+\[
+\begin{aligned}
+\frac{P_{younger}(x=9)}{P_{older}(x=9)} &= \frac{\frac{12^9e^{-12}}{9!}}{\frac{8^9e^{-8}}{9!}} \\
+  &= \frac{`r dpois(x=9, lambda=12)`}{`r dpois(x=9, lambda=8)`} \\
+  &= 0.704
+\end{aligned}
+\]
+This is the likelihood ratio, so the younger sibling's phone is less likely to produce exactly 9 texts in 8 hours.  
+
+On the other hand, if we had observed 11 texts, then 
+$$\frac{P_{younger}(x=11)}{P_{older}(x=11)}=1.58$$
+which means the younger sibling's phone is 1.58 times more likely to produce 11 texts in 8 hours.
+
+When we have one hypothesis for each phone, $H_0$ and $H_1$, we have what is known as a **simple hypothesis**.  
+
+
+To incorporate a Bayesian framework, we can specify a prior as to the probability of these hypotheses, $P(H_0)$ and $P(H_1)$, before observing the data.  
+
+If we have no information, then
+$$P(H_0)=P(H_1)=\frac{1}{2}$$
+We can look at the ratio of posteriors where
+$$P(H_0|x)=\frac{P(H_0,x)}{P(x)}=\frac{P(x|H_0)P(H_0)}{P(x)}$$
+and likewise for $H_1$,
+$$P(H_1|x)=\frac{P(x|H_1)P(H_1)}{P(x)}$$
+we then have the ratio
+$$\frac{P(H_0|x)}{P(H_1|x)}=\frac{P(x|H_0)}{P(x|H_1)}\frac{P(H_0)}{P(H_1)}$$
+
+Suppose in our example that $H_0$ represents the belief that the phone belongs to the younger child.  Without prior probabilities:
+\[
+\begin{aligned}
+\frac{P(H_0|x)}{P(H_1|x)} &=\frac{P(x|H_0)}{P(x|H_1)}\frac{P(H_0)}{P(H_1)} \\
+  &= \frac{\frac{12^x e^{-12}}{x!}}{\frac{8^x e^{-8}}{x!}}\frac{\frac{1}{2}}{\frac{1}{2}}
+\end{aligned}
+\]
+```{r echo=FALSE}
+x <- 0:15
+ratio <- round(dpois(x=x,lambda=12)/dpois(x=x,lambda=8), 2)
+```
+
+We can calculate the ratios at each value of $x$:
+
+ x | 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 | 12 | 13 | 14 | 15
+---|---|---|---|---|---|---|---|---|---|---|----|----|----|----|----|----
+$\frac{P(H_0|x)}{P(H_1|x)}$|`r ratio[1]`|`r ratio[2]`|`r ratio[3]`|`r ratio[4]`|`r ratio[5]`|`r ratio[6]`|`r ratio[7]`|`r ratio[8]`|`r ratio[9]`|`r ratio[10]`|`r ratio[11]`|`r ratio[12]`|`r ratio[13]`|`r ratio[14]`|`r ratio[15]`|`r ratio[16]`  
+
+```{r fig.width=4, fig.height=3}
+x <- 0:15
+plot(x=x, y=dpois(x=x,lambda=12)/dpois(x=x,lambda=8))
+abline(h=1)
+```
+
+The horizontal line at $\frac{P(H_0|x)}{P(H_1|x)}=1$ represents the break even point. At 1, we have equal probabilities.  Values less than 1 favor the alternative hypothesis.  
+
+Note that the graph is nonlinear and is a monotonically increasing function of $x$.  As $x$ increases, the likelihood increasingly favors the null hypothesis.  The points are not connected because $x$ is not continuous (you cannot have 5.5 texts).
+
+Interpretation: If $x<10$, it is more likely that the older sibling's phone.
+
+Now suppose that we believe that there was a one-third probability that we chose the younger child's phone ($H_0$).  Then if we were calculating Bayesian probabilities:
+\[
+\begin{aligned}
+\frac{P(H_0|x)}{P(H_1|x)} &=\frac{P(x|H_0)}{P(x|H_1)}\frac{P(H_0)}{P(H_1)} \\
+  &= \frac{\frac{12^x e^{-12}}{x!}}{\frac{8^x e^{-8}}{x!}}\frac{\frac{1}{3}}{\frac{2}{3}}
+\end{aligned}
+\]
+
+```{r echo=FALSE}
+ratio <- round(dpois(x=x, lambda=12)/dpois(x=x, lambda=8)*(1/3)/(2/3),2)
+```
+
+
+ x | 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 | 12 | 13 | 14 | 15
+---|---|---|---|---|---|---|---|---|---|---|----|----|----|----|----|----
+$\frac{P(H_0|x)}{P(H_1|x)}\frac{P(H_0)}{P(H_1)}$|`r ratio[1]`|`r ratio[2]`|`r ratio[3]`|`r ratio[4]`|`r ratio[5]`|`r ratio[6]`|`r ratio[7]`|`r ratio[8]`|`r ratio[9]`|`r ratio[10]`|`r ratio[11]`|`r ratio[12]`|`r ratio[13]`|`r ratio[14]`|`r ratio[15]`|`r ratio[16]`
+
+
+```{r echo=3:7, fig.width=10, warning=FALSE}
+default <- par()
+par(mfrow=c(1,2))
+x <- 0:15
+plot(x=x, y=dpois(x=x, lambda=12)/dpois(x=x, lambda=8)*(1/3)/(2/3), 
+     main="Likelihood Ratios with Bayesian Probabilities",
+     xlab="Number of Texts", ylab="Likelihood Ratio", pch=3)
+abline(h=1)
+plot(x=x, y=dpois(x=x, lambda=12)/dpois(x=x, lambda=8)*(1/3)/(2/3),
+     main="Likelihood Ratios of Bayesian and Frequentist Prob",
+     xlab="Number of Texts", ylab="Likelihood Ratio", pch=3)
+points(x=x, y=dpois(x=x, lambda=12)/dpois(x=x, lambda=8))
+par(default)
+```
+
+The Bayesian likelihood has a more gradual rise because $\frac{P(H_0)}{P(H_1)}=0.5$.  The Bayesian likelihood at each $x$ is half of the likelihood with a flat prior.
+
+We choose $H_0$ if
+$$\frac{P(H_0|x)}{P(H_1|x)} = \frac{P(x|H_0)}{P(x|H_1)}\frac{P(H_0)}{P(H_1)} > 1$$
+We can re-arrange the inequality to arrive at an equivalent expression
+\[
+\begin{aligned}
+\frac{P(H_0|x)}{P(H_1|x)} = \frac{P(x|H_0)}{P(x|H_1)}\frac{P(H_0)}{P(H_1)} &> 1 \\
+\frac{P(x|H_0)}{P(x|H_1)}  &> 1 \cdot \frac{P(H_1)}{P(H_0)} = c
+\end{aligned}
+\]
+
+**Making Errors**  
+In our previous example, we considered the situation where $c=1$ (in other words, a flat prior).  We concluded that our null hypothesis, $H_0$ (the younger child), is accepted as long as $x \geq 10$.  If the phone received 10 or more texts in the 8 hour period, then it is more likely that we have the younger child's phone.
+
+The cdf tells us the probabilities   
+$P_{younger}(X \geq 10)=`r ppois(q=9, lambda=12, lower.tail=FALSE)`$  
+$P_{younger}(X < 10)=`r ppois(q=9,lambda=12)`$  
+$P_{younger}(X < 10) + P_{younger}(X \geq 10) = 1$  
+$P_{older}(X \geq 10)=`r ppois(q=9, lambda=8, lower.tail=FALSE)`$  
+$P_{older}(X < 10)=`r ppois(q=9,lambda=8)`$  
+$P_{older}(X < 10) + P_{older}(X \geq 10) = 1$  
+
+The two possible errors are:
+
+1) Type I: Reject $H_0$ when it is true.
+2) Type II: Accept $H_0$ when it is false.
+
+**Example**  If $c=1$, what are the probabilities of making an error in our conclusion?
+
+Type I Error (wrongly rejecting $H_0$): If the phone had fewer than 10 texts, our model indicates that we have the older child's phone, and we make such a conclusion.  But in reality, the phone belongs to the younger child which is our $H_0$. 
+
+To calculate the probability of this error, we use the younger child's cdf (Pois($\lambda=12$)) to find the total probability of when the younger child's phone receives fewer than 10 texts.
+$$
+\begin{aligned}
+P(\text{Reject} \ H_0|H_0) &= P(X < 10 |H_0) \\
+  &=`r ppois(9,12)`
+\end{aligned}
+$$
+
+Type II Error (wrongly accepting $H_0$): If the phone had 10 or more texts, we would conclude that we had the younger child's phone.  But in reality, the phone belongs to the older child which is our $H_1$. 
+
+To calculate the probability of this error, we use the older child's cdf (Pois($\lambda=8$)) to find the total probability of that the older child's phone receives 10 or more texts.
+
+$$
+\begin{aligned}
+P(\text{Accept} \ H_0|H_1) &= P(X \geq 10 | H_1) \\
+  &= `r 1-ppois(9,8)`
+\end{aligned}
+$$
+
+It helps to think about this issue by telling yourself: the answer is either $H_0$ or $H_1$.  If it is $H_0$, then we are dealing with $H_0$'s cdf.  To calculate the error, we figure out what is the cumulative probability of the less likely situation.  The probability of this error has nothing to do with the actual data.  We have determined the threshold where we change from one conclusion to another.  In this case, we determined the threshold is between 9 and 10 texts.
+
+
+
+**Example**  Now suppose $c=2$, meaning
+$$\frac{P(H_0)}{P(H_1)}=\frac{1}{2}$$
+
+So $P(H_0)=\frac{1}{3}$ and $P(H_1)=\frac{2}{3}$.
+
+Our calculations and plots showed that the threshold shifted from 9-10 to 11-12 texts.
+
+Type I Error (wrongly rejecting $H_0$): The phone has fewer than 12 texts, we conclude that it is the older child's phone, but we are wrong.  Use $H_0$'s (younger child) cdf:
+$$
+\begin{aligned}
+P(\text{Reject} \ H_0|H_0) &= P(X < 12|H_0) \\
+  &=0.462
+\end{aligned}
+$$
+Type II Error (wrongly accepting $H_0$): The phone has 12 or more texts, we conclude that is the younger child's phone, but we are wrong.
+$$
+\begin{aligned}
+P(\text{Accept} \ H_0|H_1) &= P(X \geq 12 |H_1) \\
+  &= 0.112
+\end{aligned}
+$$
+
+###Neyman-Pearson Paradigm  
+A non-Bayesian approach to decision-making focusing on the previously described errors rather than prior probabilities.  
+
+We have two hypotheses, the null hypothesis, $H_0$, and the alternative hypothesis, $H_1$ or $H_A$.
+
+Review of familiar terms:
+
+- Rejecting $H_0$ when it is true is type I error.  
+- The probability of type I error is called the level of significance, and is denoted $\alpha$.
+- Failing to reject (meaning, accepting) the null hypothesis when it is false is a type II error with probability $\beta$.  
+- The probability of correctly rejecting $H_0$ is called power with probability $1-\beta$.
+- The function of the data used to make our decision is called the test statistic.  
+- The set of values of the test statistic is called the rejection region (all other values comprise the acceptance region).
+- The distribution of the test statistic when $H_0$ is true is the null distribution.  
+
+Formally, simple hypotheses are ones in which the data follow one of two possible joint distributions, each of these specified by one of these hypotheses.  
+
+**Lemma (Neyman-Pearson)**  Suppose that $H_0$ and $H_1$ are simple hypotheses and the test that rejects $H_0$ whenever the likelihood ratio is less than $c$ has significance level $\alpha$.  Then any other test for which the significance level is less than or equal to $\alpha$ has power less than or equal to the likelihood ratio test.  
+
+In this sense, the likelihood ratio test is most powerful.
+
+**January 25, 2016**    
+**Neyman-Pearson Proof**  
+Suppose that $\mathbf{X}=(X_1, \dots X_n)$ have joint density or mass function $f(x)$ where $f$ is one of $f_0$ or $f_1$ and we test 
+\[H_0:f=f_0 \ \text{vs.} \ H_1:f=f_1\]
+We will choose only one of these hypotheses, so our decision function, $d(\mathbf{x})$, is actually a Bernoulli random variable taking on a value of $0$ if we accept $H_0$ and 1 otherwise.
+
+Consider our likelihood ratio test.  We have
+\[d(\mathbf{x})=
+\begin{cases}
+1, \ \text{Reject $H_0$:} \ f_0(\mathbf{x}) < cf_1(\mathbf{x}) \\
+0, \ \text{Accept $H_0$:} \ f_0(\mathbf{x}) \geq cf_1(\mathbf{x})
+\end{cases}
+\]
+for some positive $c$.
+
+- Note that we have rearranged the condition of $d(\mathbf{x})=1$ from what we had already seen: At the end of the example of phones and text messages, we set up a rule that we should accept the null hypothesis if the likelihood of the null hypothesis divided by the likelihood of the alternative hypothesis exceeded a value, $c$:
+\[
+\frac{P(x|H_0)}{P(x|H_1)} > c \ \ \text{or} \ \ \frac{f_0(x)}{f_1(x)} > c
+\]
+But here we are switching our terms around and using the ratio to apply to when we reject the null hypothesis.  That is, we reject $H_0$ when $\frac{f_0(x)}{f_1(x)} < c$ and that is when $d(\mathbf{x})=1$.  So
+\[
+\frac{f_0(\mathbf{x})}{f_1(\mathbf{x})} < c \Rightarrow f_0(\mathbf{x}) < cf_1(\mathbf{x})
+\]
+
+The decision function is a Bernoulli random variable which means that $E[d(\mathbf{X})]=P(d(\mathbf{X})=1)$
+
+In regard to the null hypothesis, $\alpha$ represents the probability that we reject $H_0$, or the probability that $d(\mathbf{X})=1$:
+\[
+E_0[d(\mathbf{X})]=P_0(d(\mathbf{X})=1)=\alpha
+\]
+This is the probability of type I error, whereas for the alternative hypothesis,
+\[
+\begin{aligned}
+E_1[d(\mathbf{X})] &= P_1(d(\mathbf{X})=1) \\
+  &= 1 - \beta
+\end{aligned}
+\]
+It suffices to show that if $d^*(\mathbf{x})$ is the decision function of another test with $0 \leq d^*(\mathbf{x}) \leq 1$ and
+\[
+E_0[d^*(\mathbf{X})] \leq E_0[d(\mathbf{X})] = \alpha
+\]
+then
+\[
+E_1[d^*(\mathbf{X})] \leq E_1[d(\mathbf{X})]
+\]
+where $E_1[d(\mathbf{x})]$ is our power, so we are making a direct comparison of power.
+
+First note that
+\[
+cf_1(\mathbf{x})-f_0(\mathbf{x})
+\begin{cases}
+  &> 0, d(\mathbf{x})=1 \\
+  &\leq 0, d(\mathbf{x})=0
+\end{cases}
+\]
+Thus,
+\[
+d^*(\mathbf{x})[cf_1(\mathbf{x})-f_0(\mathbf{x})] \leq d(\mathbf{x})[cf_1(\mathbf{x})-f_0(\mathbf{x})]
+\]
+and so,
+\[
+\begin{aligned}
+\int \cdots \int d^*(\mathbf{x})[cf_1(\mathbf{x}) - f_0(\mathbf{x})]d\mathbf{x} &\leq \int \cdots \int d(\mathbf{x})[cf_1(\mathbf{x})-f_0(\mathbf{x})]d\mathbf{x} \\
+\int \cdots \int [d^*(\mathbf{x}) \cdot cf_1(\mathbf{x}) - d^*(\mathbf{x}) \cdot f_0(\mathbf{x})]d\mathbf{x} &\leq \int \cdots \int [d(\mathbf{x}) \cdot cf_1(\mathbf{x})- d(\mathbf{x}) \cdot f_0(\mathbf{x})]d\mathbf{x} \\
+\int \cdots \int [d^*(\mathbf{x}) \cdot cf_1(\mathbf{x}) - d(\mathbf{x}) \cdot cf_1(\mathbf{x})]d\mathbf{x} &\leq \int \cdots \int [d^*(\mathbf{x}) \cdot f_0(\mathbf{x}) - d(\mathbf{x}) \cdot f_0(\mathbf{x})]d\mathbf{x} \\
+\int \cdots \int c[d^*(\mathbf{x}) - d(\mathbf{x})] f_1(\mathbf{x}) d\mathbf{x} &\leq \int \cdots \int [d^*(\mathbf{x}) - d(\mathbf{x})] f_0(\mathbf{x}) d\mathbf{x} \\
+c\int \cdots \int [d^*(\mathbf{x})-d(\mathbf{x})]f_1(\mathbf{x})d\mathbf{x} &\leq \int \cdots \int [d^*(\mathbf{x})-d(\mathbf{x})]f_0(\mathbf{x})d\mathbf{x}
+\end{aligned}
+\]
+Note that the above could be sums instead of integrals in the discrete case.
+
+The left-hand side is simply $cE_1[d^*(\mathbf{x})-d(\mathbf{x})]$ or $c\Big(E_1[d^*(\mathbf{x})]-E_1[d(\mathbf{x})]\Big)$
+
+and the right-hand side is $E_0[d^*(\mathbf{x})] - E_0[d(\mathbf{x})]$.
+
+Since $E_0[d^*(\mathbf{x})] \leq E_0[d(\mathbf{x})]$ it follows that $E_1[d^*(\mathbf{x})] \leq E_1[d(\mathbf{x})]$
+
+We have thus finished our proof.
+
+The Neyman-Pearson Lemma as stated does not guarantee the existence of a most powerful test ($\alpha$-level) but merely states that the test that rejects $H_0$ for $\frac{f_0(\mathbf{x})}{f_1(\mathbf{x})}<c$ will be a most powerful test for some level $\alpha$ (but not necessarily for all $\alpha$).
+
+Moreover, the Neyman-Pearson Lemma does not guarantee the uniqueness a most powerful test.  In fact, there may be many test functions having the same power as the most powerful test function under the Neyman-Pearson Lemma.  
+
+**Example**  A random sample of size $n$ drawn from an exponential population is used to test the null hypothesis $\theta=\theta_0$ against the alternative hypothesis $\theta=\theta_1>\theta_0$.  Find the most powerful critical region of size $\alpha$.  
+
+**Solution**  The likelihood ratio is
+\[
+\begin{aligned}
+T(\mathbf{X}) &= \frac{f_0(\mathbf{X})}{f_1(\mathbf{X})} \\
+  &= \frac{f_0(X_1)f_0(X_2)\dots f_0(X_n)}{f_1(X_1)f_1(X_2)\dots f_1(X_n)} \\
+  &= \frac{\frac{1}{\theta_0^n}\exp\bigg[-\frac{1}{\theta_0}\sum_{i=1}^n X_i \bigg]}{\frac{1}{\theta_1^n}\exp\bigg[-\frac{1}{\theta_1}\sum_{i=1}^n X_i \bigg]} \\
+  &= \bigg(\frac{\theta_1}{\theta_0}\bigg)^n\exp\bigg[-\frac{1}{\theta_0}\bigg(\sum_{i=1}^n X_i\bigg) -\frac{1}{\theta_1}\sum_{i=1}^n X_i \bigg] \\
+  &= \bigg(\frac{\theta_1}{\theta_0}\bigg)^n\exp\bigg[-\bigg(\frac{1}{\theta_0}-\frac{1}{\theta_1}\bigg)\sum_{i=1}^n X_i\bigg]
+\end{aligned}
+\]
+
+We are interested in setting a threshold with which we would reject $H_0$ if the likelihood ratio descends below a certain point.
+
+But note that the likelihood ratio is monotonically decreasing as $\sum_{i=1}^n X_i$ increases (we know this because we are given $\theta_1 > \theta_0$).  The parameters $\theta_0$, $\theta_1$, and $n$ are fixed.  The only variable is $\sum_{i=1}^n X_i$.  Therefore, instead of setting a threshold for the likelihood ratio, we will do so for $\sum_{i=1}^n X_i$.  We will reject $H_0$ if 
+\[\sum_{i=1}^n X_i > k\]
+
+The reason why we focus on $\sum_{i=1}^n X_i$ and not the likelihood ratio is because we know that the sum of exponential i.i.d. random variables is a gamma-distributed random variable.
+
+Thus, if $H_0$ is true, then $\sum_{i=1}^n X_i \sim \text{Gamma}(n, \theta_0)$. 
+
+A gamma distribution looks something like
+
+```{r echo=FALSE, fig.height=3, fig.width=6}
+library(ggplot2)
+ggplot(data.frame(x=c(0, 250), y=c(0, .5)), aes(x)) + 
+  stat_function(fun=function(x) dgamma(x=x, shape=10, scale=10)) +
+  geom_vline(data=NULL, aes(xintercept=175),
+               linetype="solid", size=.5, colour="black") +
+  labs(title=expression(paste("Distribution of ", Sigma, "X")))
+```
+
+The vertical line represents a hypothetical location of $k$ and is interpreted in much the same way as one interprets a p-value with respect to a rejection region that is specified for a normal distribution.  
+
+For a specified $\alpha$, $k$ is the $(1-\alpha)^{th}$ quantile of this gamma distribution, say $\pi_{\alpha}$.
+
+
+The Neyman-Pearson Lemma tells us that the most powerful test rejects $H_0$ for $\sum_{i=1}^n X_i > k$, where $k=\pi_{\alpha}$, when 
+\[\alpha=P_{\theta_0}\bigg[\sum_{i=1}^n X_i > k\bigg]\]
+and the power of the test is 
+\[P_{\theta_1}\bigg[\sum_{i=1}^n X_i > k\bigg]\]
+
+Elsewhere the notation appears as
+\[
+\text{Rejection Region:} \ \alpha=P\bigg(\sum_{i=1}^n X_i > k \ \Big| \ \theta_0 \bigg)
+\]
+\[
+\text{Power:} \ P\bigg(\sum_{i=1}^n X_i > k \ \Big| \ \theta_1 \bigg)
+\]
+
+(Put in simple terms, the Neyman-Pearson Lemma tells us that to find the most powerful test, find $k$ such that the rejection region created by $k$ is equal to $\alpha$.)
+
+**Example** Using the findings from above, let $\alpha=0.05$ and $n=20$.  Our hypotheses:
+\[
+H_0: \theta_0 = 3 \ \ \ \text{vs.} \ \ \ H_1: \theta_1 = 10
+\]
+We are given $\alpha$, now we must determine $k$.
+\[
+0.05=P\bigg(\sum_{i=1}^{20} X_i > k \ \Big| \ \theta_0=3 \bigg)
+\]
+How to determine $k$ in `R`: `qgamma(p=0.95, shape=20, scale=3)` = `r qgamma(p=0.95, shape=20, scale=3)`
+```{r fig.height=4, fig.width=5}
+k <- qgamma(p=0.95, shape=20, scale=3) # gives us k
+1-pgamma(q=k, shape=20, scale=10) # power of test
+sum.x <- 1:300
+H_0 <- dgamma(x=sum.x, shape=20, scale=3) # null hypothesis
+H_1 <- dgamma(x=sum.x, shape=20, scale=10) # alt hypothesis
+plot(x=sum.x, y=H_0, xlab="Sum of X Values", ylab="Density", type='l')
+lines(x=sum.x, y=H_1, col='red')
+# represents critical value
+abline(v=k, col='blue')
+# alpha is area under black curve that is to the right of the vertical line
+# power is the area to the right of the blue line under the red curve
+```
+
+Some variables that affect power:
+
+- The significance level chosen ($\alpha$).
+- The sample size, $n$.  Increasing the sample size will condense the curves so that the range is narrower and taller.
+- The difference between the two hypotheses, $\theta_0$ and $\theta_1$.  
+
+The power in this example is extremely large due to the difference in hypotheses.
+
+If we set $H_1: \theta_1=5$
+```{r fig.height=4, fig.width=5}
+new.H_1 <- dgamma(x=sum.x, shape=20, scale=5)
+plot(x=sum.x, y=H_0, type='l')
+lines(x=sum.x, y=new.H_1, col='green')
+abline(v=k, col='blue')
+1-pgamma(q=k, shape=20, scale=5) # power of test with new alt hypothesis
+```
+
+```{r eval=FALSE, echo=FALSE}
+library(ggplot2)
+ggplot(data.frame(x = c(-5, 5)), aes(x)) + stat_function(fun = dnorm)
+x <- seq(from=0,to=1.5,by=0.01) 
+y <- dnorm(x)
+df <- data.frame(x=x, y=y)
+ggplot(data.frame(x = c(-5, 5)), aes(x)) +
+  #geom_vline(data=NULL, aes(xintercept=0.5),
+  #             linetype="solid", size=.5, colour="black") +
+  geom_segment(mapping=aes(x=0.5,y=0,xend=0.5,yend=.35), size=.5) +
+  layer(geom = "area", data=df, mapping = aes(x = ifelse(x>0.5 & x<1.5, x, 0)),
+          geom_params = list(fill="red", alpha = 0.5)) +
+  stat_function(fun = dnorm, args = list(mean = 0, sd = 1)) +
+  scale_y_continuous(limits = c(0, max(df$y)))
+
+
+x <- seq(from=0.5,to=1.5,by=0.01) 
+y <- dnorm(x)
+df <- data.frame(x=x, y=y)
+ggplot(data.frame(x = c(-5, 5)), aes(x)) + 
+  stat_function(fun = dnorm, args = list(mean = 0, sd = 1)) +
+  geom_segment(aes(x=0.5,y=0,xend=0.5,yend=.35)) +
+  geom_polygon(mapping=aes(x, y), data=df)
+
+###
+ids <- factor(c("1.1", "2.1", "1.2", "2.2", "1.3", "2.3"))
+values <- data.frame(
+  id = ids,
+  value = c(3, 3.1, 3.1, 3.2, 3.15, 3.5)
+)
+positions <- data.frame(
+  id = rep(ids, each = 4),
+  x = c(2, 1, 1.1, 2.2, 1, 0, 0.3, 1.1, 2.2, 1.1, 1.2, 2.5, 1.1, 0.3,
+  0.5, 1.2, 2.5, 1.2, 1.3, 2.7, 1.2, 0.5, 0.6, 1.3),
+  y = c(-0.5, 0, 1, 0.5, 0, 0.5, 1.5, 1, 0.5, 1, 2.1, 1.7, 1, 1.5,
+  2.2, 2.1, 1.7, 2.1, 3.2, 2.8, 2.1, 2.2, 3.3, 3.2)
+)
+# Currently we need to manually merge the two together
+datapoly <- merge(values, positions, by=c("id"))
+###
+
+
+x<-seq(0.0,0.1699,0.0001)  
+ytop<-dnorm(0.12,0.08,0.02)
+MyDF<-data.frame(x=x,y=dnorm(x,0.08,0.02))
+shade <- rbind(c(0.12,0), subset(MyDF, x > 0.12), c(MyDF[nrow(MyDF), "X"], 0))
+p <- qplot(x=MyDF$x,y=MyDF$y,geom="line") 
+p + geom_segment(aes(x=0.12,y=0,xend=0.12,yend=ytop)) +
+    geom_polygon(data = shade, aes(x, y))
+
+
+## Create data
+dat <- with(density(rnorm(100)), data.frame(x, y))
+## Color the area under the curve between -1.2 and 1.1
+ggplot(data = dat, mapping = aes(x = x, y = y)) +
+    layer(geom = "line") +
+    layer(geom = "area", mapping = aes(x = ifelse(x>-1.2 & x<1.1 , x, 0)),
+          geom_params = list(fill = "red", alpha = 0.5)) +
+    scale_y_continuous(limits = c(0, max(dat$y)))
+
+
+#' Draw Normal Distribution Density with an area shaded in.
+#'
+#' @param lb Lower bound of the shaded area. Use \code{-Inf} for a left tail.
+#' @param ub Upper bound of the shaded area. Use \code{Inf} for a right tail.
+#' @param mean Mean of the normal distribution
+#' @param sd Standard deviation of the normal distribution
+#' @param limits Lower and upper bounds on the x-axis of the area displayed.
+#' @return ggplot object.
+#' @examples
+#' # Standard normal with upper 2.5% tail shaded
+#' normal_prob_area_plot(2, Inf)
+#' # Standard normal with lower 2.5% tail shaded
+#' normal_prob_area_plot(-Inf, 2)
+#' # standard normal with middle 68% shaded.
+#' normal_prob_area_plot(-1, 1)
+normal_prob_area_plot <- function(lb, ub, mean = 0, sd = 1, limits = c(mean - 3 * sd, mean + 3 * sd)) {
+    x <- seq(limits[1], limits[2], length.out = 100)
+    xmin <- max(lb, limits[1])
+    xmax <- min(ub, limits[2])
+    areax <- seq(xmin, xmax, length.out = 100)
+    area <- data.frame(x = areax, ymin = 0, ymax = dnorm(areax, mean = mean, sd = sd))
+    (ggplot()
+     + geom_line(data.frame(x = x, y = dnorm(x, mean = mean, sd = sd)),
+                 mapping = aes(x = x, y = y))
+     + geom_ribbon(data = area, mapping = aes(x = x, ymin = ymin, ymax = ymax))
+     + scale_x_continuous(limits = limits))
+}
+
+normal_prob_area_plot(2, Inf)
+
+
+#stumbled upon, try using with airline data
+#b <- ggplot(mtcars, aes(wt, mpg)) + geom_point()
+#df <- data.frame(x1 = 2.62, x2 = 3.57, y1 = 21.0, y2 = 15.0)
+#b + geom_curve(aes(x = x1, y = y1, xend = x2, yend = y2, colour = "curve"), data = df, #curvature = -0.2) + geom_segment(aes(x = x1, y = y1, xend = x2, yend = y2, colour = "segment"), data = df)
+```
+
+
+
+**January 27, 2016**  
+**Problem**  Let $H_0: X_1,\dots, X_8 \sim \text{Poisson}(\lambda=2) \ \text{vs.} \ H_1: X_1,\dots ,X_8 \sim \text{Poisson}(\lambda=\frac{1}{2})$. Find the most powerful test.  
+**Solution**  
+\[
+\begin{aligned}
+\Lambda &= \frac{L(\lambda_0)}{L(\lambda_1)} \\
+  &= \frac{2^{\sum X_i}e^{-8(2)}}{\frac{1}{2}^{\sum X_i}e^{-12}} \\
+  &= 4^{\sum X_i}e^{-12}
+\end{aligned}
+\]
+The likelihood ratio is a monotonically increasing function of $\sum X_i$ as $\sum X_i$ increases.  That is to say that $H_0$ becomes increasingly probable as $\sum X_i$ increases.  So if the ratio is low, we are inclined to reject the null hypothesis.
+
+The $\alpha$-level most powerful test rejects $H_0$ when $\sum_{i=1}^8 X_i < k$, where 
+\[P\bigg(\sum_{i=1}^8 X_i < k \ \Big| \ \lambda_0=2\bigg)=\alpha\]
+
+What is the above equation saying?  We want the sum of $X_i$ variables to be less than a specified $k$ such that the probability is equal to $\alpha$.
+
+In this example, if given $\alpha$, we can find $k$ since the sum of Poisson random variables are also Poisson distributed where the new parameter is $n\lambda$. So $\sum_{i=1}^8 X_i \sim \text{Pois}(8\lambda)$.
+
+Let $\alpha=0.05$.  We had 8 samples, so our new parameter is $n\lambda = 16$.  We will find $k$ through trial and error.  Try $k=6$ (cumulative probability for 5 or fewer):
+```{r}
+ppois(q=5, lambda=16)
+```
+So the cumulative probability for total occurrences equaling 5 and below is `r ppois(q=5, lambda=16)`.  This is too small for $\alpha$.
+
+We can raise $\sum X_i$ to expand the rejection region so that $\alpha=0.05$.
+```{r}
+ppois(q=10, lambda=16)
+```
+$P(\sum X_i \leq 10)$ is too large for our $\alpha$ target.
+
+```{r}
+ppois(q=9, lambda=16)
+```
+Since Poisson deals with discrete values, this is the closest that we can have to satisfy our criteria $\alpha=0.05$ without exceeding our threshold.
+
+So when $k=10$, then $\alpha=0.0433$.
+
+Then our power is the probability that we will correctly reject the null hypothesis if the alternative hypothesis is true: 
+\[P\bigg(\sum_{i=1}^8 \leq 9 \ \Big| \ \lambda_1=\frac{1}{2}\bigg)\]
+
+New parameter of alternative hypothesis: $n\lambda=4$ 
+```{r}
+ppois(q=9, lambda=4)
+```
+So our power is $0.992$.  The large power is due to the large difference between the two parameters.
+
+###General Form of Neyman-Pearson Lemma    
+This method is to maximize $E_1[d(\mathbf{X})]$ subject to the constraints
+\[
+E_0[d(\mathbf{X})]=\alpha \ \text{and} \ 0 \leq d(\mathbf{X}) \leq 1
+\]
+The optimal $d$ is given by
+\[
+d(\mathbf{X}) =
+\begin{cases}
+1, f_0(\mathbf{X}) < cf_1(\mathbf{X}) \\
+k, f_0(\mathbf{X}) = cf_1(\mathbf{X}) \\
+0, f_0(\mathbf{X}) > cf_1(\mathbf{X}) 
+\end{cases}
+\]
+where $c$ and $k \in (0,1)$ are chosen so that the constraints are satisfied.  In the case where the statistic $T(\mathbf{X})=f_0(\mathbf{X})/f_1(\mathbf{X})$ is a continuous random variable (which implies $X_1, \dots, X_n$ are continuous), we can take the optimal $d$ to be $0$ or $1$ for all possible values of $X_1, \dots, X_n$ and so a most powerful (MP) test of $H_0: f=f_0$ vs. $H_1: f=f_1$ exists for all $\alpha > 0$.  
+
+However, for a given level $\alpha$, a most powerful test $H_0$ vs. $H_1$ need not exist if $T(\mathbf{X})$ discrete.  
+
+**Example**  Suppose that $X_1, \dots, X_n$ are i.i.d. uniform random variables on the interval $[0, \theta]$ where $\theta$ is either $\theta_0$ or $\theta_1$ (where $\theta_0 > \theta_1$).  We want to test $H_0: \theta = \theta_0$ vs. $H_1: \theta=\theta_1$ at level $\alpha$.  
+
+```{r fig.width=6, fig.height=2, echo=FALSE}
+ggplot(data.frame(x=c(0, 5), y=c(0,1.25)), aes(x=x, y=y)) + geom_segment(mapping=aes(x=0,y=1,xend=1,yend=1), size=.5, colour="blue") + 
+  geom_segment(mapping=aes(x=0,y=.5,xend=2,yend=.5), size=.5, colour="red") + 
+  geom_segment(mapping=aes(x=0,y=0,xend=0,yend=1), size=.5) + geom_segment(mapping=aes(x=1,y=0,xend=1,yend=1), size=.5, colour="blue") + 
+  geom_segment(mapping=aes(x=2,y=0,xend=2,yend=.5), size=.5, colour="red") + 
+  scale_x_continuous(breaks = c(1, 2), labels=c(expression(theta["1"]), expression(theta["0"]))) +
+  coord_cartesian(xlim=c(0, 2.25), ylim=c(0,1.25)) + 
+  labs(title=expression(paste("PDFs of 2 Distributions, ", theta["1"], "<", theta["0"])))
+```
+
+
+The pdf of the uniform is $f(x)=\frac{1}{b-a}$, and the joint density of $\mathbf{X}=(X_1,\dots,X_n)$ is 
+\[
+f(\mathbf{X};\theta)=\frac{1}{\theta^n} \mathbf{I}_{(max(X_1,\dots,X_n)\leq \theta)}
+\]
+
+- The purpose of $\mathbf{I}_{(max(X_1,\dots,X_n)\leq \theta)}$ is to take into account the possibility of the event $\theta$.  If $(max(X_1,\dots,X_n) > \theta)$, the $\theta$ cannot be our parameter for the upper bound.  Then $\mathbf{I}=0$ and the joint probability of $f(\mathbf{X})$ and $\theta$ is zero.
+
+A most powerful test of $H_0$ vs. $H_1$ will be based on the test statistic $\Big[$ and let $\text{max}(X_1, \dots, X_n) \equiv X_{(n)}$ (the notation $X_{(n)}$ comes from order statistics $\Big]$
+\[
+\begin{aligned}
+T(\mathbf{X}) &= \frac{f(\mathbf{X};\theta_0)}{f(\mathbf{X}; \theta_1)} \\
+  &= \frac{\frac{1}{\theta_0-0}\cdots\frac{1}{\theta_0-0}}{\frac{1}{\theta_1-0}\cdots \frac{1}{\theta_1-0}} \\
+  &= \bigg(\frac{\theta_1}{\theta_0}\bigg)^n \mathbf{I}_{(X_{(n)}\leq \theta_1)}
+\end{aligned}
+\]
+
+- The indicator variable is set to compare the largest $X_i$ against the smaller upper bound, $\theta_1$.  If $X_{(n)} > \theta_1$, then we can  conclude that $H_A: \theta = \theta_1$ couldn't be true.
+
+Note that there are two possibilities for $T$:
+
+- $\Big(\frac{\theta_1}{\theta_0}\Big)^n$ if $X_{(n)}$ is equal to or less than $\theta_1$
+- $0$ if $X_{(n)}$ is greater than $\theta_1$.
+
+It follows that the test that rejects $H_0$ when $X_{(n)} \leq \theta_1$ will be a most powerful test of $H_0$ vs. $H_1$ with level
+\[
+\begin{aligned}
+\alpha &= P_{\theta_0}(X_{(n)} \leq \theta_1) \\
+  &= \bigg(\frac{\theta_1}{\theta_0}\bigg)^n
+\end{aligned}
+\]
+Think about why this is the probability: if $X_i$ is uniformly distributed, the probability that it will fall within the larger bound is 100%.  The probability that it will fall within the lower bound is $\theta_1 / \theta_0$.
+
+Recall $\theta_1 < \theta_0$ so $\frac{\theta_1}{\theta_0} < 1$. Raising $\frac{\theta_1}{\theta_0}$ to the $n^{th}$ power can lower the value to equal $\alpha$.   So $n$ can be manipulated to meet $\alpha$.  Otherwise, we have no way to create a scenario to set the $\alpha$ value - $\theta_1$ and $\theta_0$ are fixed values.
+
+The power of the test is
+\[
+P_{\theta_1}(X_{(n)} \leq \theta_1) = 1
+\]
+This is telling us an obvious fact: if $\theta_1$ (the smaller one) is the true parameter, then the maximum value, $X_{(n)}$, must be less than the true upper bound, $\theta_1$.  
+
+Note that this test will also be the most powerful test for any level $\alpha > \Big(\frac{\theta_1}{\theta_0}\Big)^n$ since the power will always be 1.
+
+If we want the most powerful test for $\alpha < \Big(\frac{\theta_1}{\theta_0}\Big)^n$ in the previous example, the Neyman-Pearson Lemma does not help directly.  
+
+However, since $X_{(n)}$ is sufficient for $\theta$, we intuitively should reject $H_0$ for $X_{(n)} \leq k$ where
+\[
+P_{\theta_0}(X_{(n)} \leq k) = \bigg(\frac{k}{\theta_0}\bigg)^n = \alpha
+\]
+```{r fig.width=6, fig.height=2, echo=FALSE}
+ggplot(data.frame(x=c(0, 5), y=c(0,1.25)), aes(x=x, y=y)) + geom_segment(mapping=aes(x=0,y=1,xend=1,yend=1), size=.5, colour="blue") + 
+  geom_segment(mapping=aes(x=0,y=.5,xend=2,yend=.5), size=.5, colour="red") + 
+  geom_segment(mapping=aes(x=0,y=0,xend=0,yend=1), size=.5) + geom_segment(mapping=aes(x=1,y=0,xend=1,yend=1), size=.5, colour="blue") + 
+  geom_segment(mapping=aes(x=2,y=0,xend=2,yend=.5), size=.5, colour="red") + 
+  geom_segment(mapping=aes(x=.1,y=0,xend=.1,yend=.5), size=.1) + 
+  scale_x_continuous(breaks = c(.1, 1, 2), labels=c(expression(alpha), expression(theta["1"]), expression(theta["0"]))) +
+  coord_cartesian(xlim=c(0, 2.25), ylim=c(0,1.25)) + 
+  labs(title=expression(paste("PDFs of 2 Distributions, ", theta["1"], "<", theta["0"])))
+```
+
+Solving for $k$, we get $k=\theta_0\alpha^{1/n}$ and so the power of the test is
+\[
+\begin{aligned}
+P_{\theta_1}(X_{(n)} \leq k) &= \bigg(\frac{k}{\theta_1}\bigg)^n \\
+P_{\theta_1}(X_{(n)}\leq \theta_0\alpha^{1/n}) &= \bigg(\frac{\theta_0\alpha^{1/n}}{\theta_1}\bigg)^n \\
+  &=\alpha\bigg(\frac{\theta_0}{\theta_1}\bigg)^n
+\end{aligned}
+\]
+To show this is a most powerful test for $\alpha < \Big(\frac{\theta_1}{\theta_0}\Big)^n$, we use the general form of the Neyman-Pearson Lemma, a function $d$ that maximizes $E_{\theta_0}[d(\mathbf{X})]$ under the constraints
+\[
+E_{\theta_0}[d(\mathbf{X})] = \alpha < \Big(\frac{\theta_1}{\theta_0}\Big)^n \ \text{and} \ 0 \leq d(\mathbf{X}) \leq 1
+\]
+is 
+\[
+d(\mathbf{X})=
+\begin{cases} 
+1, X_{(n)} \leq \theta_0 \alpha^{1/n} \\
+0, \text{otherwise}
+\end{cases}
+\]
+
+Since $E_{\theta_1}[d(\mathbf{X})]=\alpha\bigg(\frac{\theta_0}{\theta_1}\bigg)^n=P_{\theta_1}[X_{(n)}\leq \theta_0\alpha^{1/n}]$, the test that rejects $H_0$ if $X_{(n)} \leq \theta_0\alpha^{1/n}$ is a most powerful test for level $\alpha < \bigg(\frac{\theta_1}{\theta_0}\bigg)^n$
+
+The p-value is defined as the smallest level of significance at which an experimenter using a particular test statistic, $T$, would reject $H_0$ on the basis of the observed outcome.  
+
+###Uniformly Most Powerful Tests  
+If a hypothesis does not completely specify the probability distribution, then the hypothesis is called a composite hypothesis.
+
+In some cases, the theory of the Neyman-Pearson Lemma can be extended to cover composite hypotheses.  
+
+If the alternative, $H_1$, is composite, a test that is most powerful for every simple alternative in $H_1$ is said to be uniformly most powerful.
+
+**Definition**  Formally, a level-$\alpha$ test, $\psi$, is uniformly most powerful (UMP) for $H_0: \theta \in \Theta_0$ vs. $H_1: \theta \in \Theta_1$, for any other level-$\alpha$ test $\psi^*$.  
+
+**February 01, 2016**  
+**Example** Let $Y$ have a binomial distribution bin$(n,p)$.  Find a uniformly most powerful test of the simple null hypothesis $H_0:p=p_0$ against the one-sided composite alternative hypothesis $H_1: p=p_1>p_0$.
+
+We will set up a likelihood ratio and reject $H_0$ if the ratio is equal to or below a specified level $c$:
+\[
+T(y) =\frac{f_0(y)}{f_1(y)} = \frac{\binom{n}{y}p_0^y(1-p_0)^{n-y}}{\binom{n}{y}p_1^y(1-p_1)^{n-y}} \leq c
+\]
+As in previous examples, we want to re-arrange this equality/inequality so that we can isolate the random variable whose distribution we know. And we know $y$ is binomial.
+
+The ratio is equivalent to 
+\[
+T(y) = \bigg(\frac{p_0(1-p_1)}{p_1(1-p_0)}\bigg)^y\bigg(\frac{1-p_0}{1-p_1}\bigg)^n \leq c
+\]
+Take the log of both sides
+\[
+y\log\bigg(\frac{p_0(1-p_1)}{p_1(1-p_0)}\bigg) \leq \log c - n \log\bigg(\frac{1-p_0}{1-p_1}\bigg)
+\]
+Since we are given $p_0 < p_1$, we have $p_0(1-p_1) < p_1(1-p_0)$, and it follows that $\log\Big(\frac{p_0(1-p_1)}{p_1(1-p_0)}\Big) < 0$.  
+
+Then when we divide both sides by $\log\Big(\frac{p_0(1-p_1)}{p_1(1-p_0)}\Big)$, the inequality switches direction:
+\[
+y \geq \frac{\log c - n \log \bigg(\frac{1-p_0}{1-p_1}\bigg)}{\log \bigg(\frac{p_0(1-p_1)}{p_1(1-p_0)}\bigg)}
+\]
+for each $p_1 > p_0$.  The right-hand side of the inequality consist of constant terms: $c,n,p_0,p_1$.  So we can simply equate that to a constant that we'll call $k$:
+\[
+y \geq k
+\]
+
+To find our uniformly most powerful test, select $k$ such that $P_{p_0}(Y\geq k)=\alpha$.
+
+Note that because this is a one sided test (i.e. $p_1 > p_0$), the same value of $k$ can be used for every $p_1 > p_0$ (doesn't depend on the value $p_1$).
+
+Since the rejection region defines a test that is most powerful against each simple alternative $p_1 > p_0$, this is a uniformly most powerful test.
+
+- Typically a uniformly most powerful test does not exist for two-sided tests.  If this were a two-sided test (i.e. $p_0 \neq p_1$), then $k$ would depend on $p_1$: $k$ would be one value if $p_0 < p_1$ and another value if $p_0 > p_1$.  This is because of the term $\log\Big(\frac{p_0(1-p_1)}{p_1(1-p_0)}\Big)$ which is negative when $p_0 < p_1$ and positive when $p_0 > p_1$.  So if $H_1$ was $p_0 \neq p_1$, then we could not propose a single test that would be most powerful against all possible alternatives.
+
+
+To put this example in more concrete terms, suppose  
+$\alpha=0.05$  
+$n=40$  
+$p_0=0.5$  
+To determine our threshold $k$:
+\[
+\begin{aligned}
+P(Y \leq k \ \big| \ p=p_0) &= \alpha \\
+P(Y \leq k \ \big| \ p=0.5) &= 0.05 \\
+\end{aligned}
+\]
+Use trial and error to determine $k$.  To get an idea of the distribution of $Y$ under $H_0$:
+```{r echo=FALSE, fig.width=5, fig.height=4}
+x <- 0:40
+plot(x=x, y=dbinom(x=x, size=40, prob=.5), type='h')
+```
+
+Our rejection region, $\alpha$, will be the cumulative probability equal to or above $k$.  At $\alpha=0.05$, we can try $k=24$: 
+
+`1 - pbinom(q=23, size=40, prob=.5)`$=$ `r 1-pbinom(q=23, size=40, prob=.5)`.
+
+Too much.  
+
+- Note that `pbinom(q=23, size=40, prob=.5)` calculates the cumulative probability of $k=23$ and below.  So `1 - pbinom(q=23, size=40, prob=.5)` calculates the complement: $k=24$ and above.
+
+Try $k=26$: `1 - pbinom(q=25, size=40, prob=.5)` $=$ `r 1 - pbinom(25, 40, 0.5)`.
+
+A little too low for our $\alpha=0.05$, but the best option given that we are dealing with discrete values.
+
+Just to be sure, $k=25$: `1 - pbinom(q=24, size=40, prob=.5)` = `r 1 - pbinom(24, 40, 0.5)`
+
+In conclusion, we would reject $H_0$ for any value of $y \geq 26$,
+
+For the power of the test as a function of $p$, we calculate right-tail cumulative probabilities for $y \geq 26$.
+```{r fig.width=5, fig.height=4}
+p1 <- seq(0.5, 1, length=1000) # for H1
+plot(x=p1, y=1-pbinom(q=25, size=50, prob=p1), type='l')
+```
+
+Note that our plot for power does not include $p_1 < 0.5$ since that wasn't part of our alternative hypothesis.
+
+
+###Duality of Hypothesis Tests and Confidence Regions  
+In decision theory, developing confidence regions and performing hypothesis test are "two sides of the same coin."
+
+Generally speaking, confidence regions are used in estimation to find a region where we are confident of where the unknown parameters lie.
+
+On the other hand, hypothesis testing is generally used to determine if a parameter is a particular value or not.  
+
+The intuition is that if the value under consideration in the hypothesis test lies in the confidence region, then we should accept (i.e. fail to reject) $H_0$, whereas if the value falls outside the confidence region, we should accept $H_1$.
+
+**Example**  Let $X_1, \dots, X_n$ be i.i.d. normal with unknown mean $\mu$ and known variance $\sigma^2$.  We know that the optimal $(1-\alpha)\times 100\%$ confidence interval for $\mu$ is
+\[
+\overline{X} \pm z_{\alpha/2}\frac{\sigma}{\sqrt{n}}
+\]
+(Reminder: for unknown $\mu$ and known $\sigma$, use $z$-distribution; for unknown $\mu$ and unknown $\sigma$, use $t$-distribution.)
+
+For the test $H_0: \mu=\mu_0$  vs. $H_1: \mu\neq \mu_0$, it can be shown that the generalized likelihood ratio test (shown in Example A, 9.4) accepts $H_0$ for small values of $|\overline{X} - \mu_0|$, specifically if $|\overline{X} - \mu_0| < z_{\alpha/2}\frac{\sigma}{\sqrt{n}}$, or if
+\[
+\overline{X} - z_{\alpha/2}\frac{\sigma}{\sqrt{n}} < \mu_0 < \overline{X} + z_{\alpha/2}\frac{\sigma}{\sqrt{n}}
+\]
+From the book: Comparing the aceptance region of the test to the confidence interval, we see that $\mu_0$ lies in the confidence interval for $\mu$ iff the hypothesis test  accepts.  In other words, *the confidence interval consists precisely of all those values of $\mu_0$ for which the null hypothesis $H_0: \mu=\mu_0$ is accepted.*  
+
+This example shows the duality of two-sided confidence intervals and two-sided test.  The same holds for one-sided confidence intervals and one-sided tests.
+
+We now see this holds more generally.  
+
+Theorem A will show that we can use the acceptance region of a hypothesis test to determine a confidence interval.
+
+Theorem B will show the converse of A: we can use a confidence interval to determine an acceptance region for a hypothesis test.
+
+**Theorem A**  Suppose that for every value $\theta_0 \in \Theta$, there is a test at level $\alpha$ of the hypothesis $H_0: \theta=\theta_0$.  Denote the acceptance region of the test by $A(\theta_0)$.  Then the set 
+\[
+C(\mathbf{X})=\{\theta: \mathbf{X} \in A(\theta_0)\}
+\]
+is a $(1-\alpha)\times 100\%$ confidence region for $\theta$. 
+
+**Proof**  Since $A$ is the acceptance region of a test at level $\alpha$,
+\[
+P(\mathbf{X} \in A(\theta_0) \ | \ \theta=\theta_0) = 1 - \alpha
+\]
+Now
+\[
+\begin{aligned}
+P(\theta_0 \in C(\mathbf{X}) \ | \ \theta=\theta_0) &= P(\mathbf{X} \in A(\theta_0) \ | \ \theta=\theta_0) \\
+ &= 1 - \alpha
+\end{aligned}
+\]
+by definition of $C(\mathbf{X})$. 
+
+- In other words, a $(1-\alpha)\times 100\%$ confidence region for $\theta$ consists of all those values of $\theta_0$ for which the hypothesis that $\theta=\theta_0$ will not be rejected at level $\alpha$.  
+
+**Theorem B**  Suppose that $C(\mathbf{X})$ is a $(1-\alpha)\times 100\%$ confidence region for $\theta$; that is, for every $\theta$,
+\[
+P(\theta_0 \in C(\mathbf{X}) \ | \ \theta=\theta_0) = 1 - \alpha
+\]
+Then an acceptance region for a test at level $\alpha$ of the hypothesis $H_0: \theta=\theta_0$ is
+\[
+A(\theta_0) = \{\mathbf{X}: \theta_0 \in C(\mathbf{X})\}
+\]
+**Proof** The test has level $\alpha$ because 
+\[
+P(\mathbf{X} \in A(\theta_0) \ | \ \theta=\theta_0) = P(\theta_0 \in C(\mathbf{X}) \ | \ \theta=\theta_0) = 1- \alpha
+\]
+
+- In other words, Theorem B states that the hypothesis that $\theta=\theta_0$ is accepted if $\theta_0$ lies in the confidence region.  
+
+The usefulness of these theorems lies in the realization that in a given situation, it may by easier to derive an acceptance region rather than construct a confidence region (or vice versa).
+
+Note: This is a means to derive **a** confidence region from a test (Theorem A) or **an** acceptance region from a confidence region (Theorem B).  
+
+###Uniformly Most Accurate Confidence Bounds  
+Within a certain notion of accuracy of confidence bounds, which is connected to the power of the associated one-sided test, optimality of the test translates into accuracy of the bounds.  
+
+- Theorems A & B showed the connection between acceptance region and confidence interval.  Now we'll show that a uniformly most powerful test (which pertains to acceptance regions, almost always one-sided) will give us a uniformly most accurate confidence bound (which pertains to confidence intervals, also one-sided).
+
+Consider, at the $(1-\alpha)$ level, two possible lower confidence bounds for $\theta$: $\theta_l$ and $\theta_l^*$.  The fact that they are supposed to be *lower* confidence bounds means that they *should* fall below the true $\theta$.
+
+But it's not good enough that $\theta_l$ and $\theta_l^*$ are simply below the true $\theta$.  We also want the bounds to be close to $\theta$.  Thus, we say that the bound with the smaller probability of being far below $\theta$ is more accurate.  (Closer is more accurate).
+
+**Definition** A level $(1-\alpha)$ lower confidence bound (LCB) $\theta_l^*$ of $\theta$ is said to be more accurate than a competing $(1-\alpha)$ LCB $\theta_l^*$ iff, for any fixed $\theta$ and all $\theta' < \theta$,
+\[
+\begin{aligned}
+P_{\theta}(\theta_l^*(X) \leq \theta') \leq P_{\theta}(\theta_l(X) \leq \theta') && (\dagger)
+\end{aligned}
+\]
+(This equation will be referenced a few times below.)  
+
+Of course, there is an analogous definition for upper bounds.  
+
+Lower confidence bounds $\theta^*_l$ satisfying $(\dagger)$ for all competitors is called **uniformly most accurate**.  
+
+Note: $\theta_l^*$ is a uniformly most accurate level $(1-\alpha)$ LCB for $\theta$ iff $-\theta^*_l$ is a uniformly most accurate level $(1-\alpha)$ UCB for $-\theta$.  
+
+**Example**  Suppose $X_1, \dots, X_n$ are i.i.d normal with unknown mean, $\mu$, and known variance $\sigma^2$.  
+
+As seen numerous times, the level $\alpha$ test for $H_0: \mu=\mu_0$ vs. $H_1: \mu > \mu_0$ rejects $H_0$ when 
+\[
+\frac{\overline{X}-\mu_0}{\frac{\sigma}{\sqrt{n}}} \geq z_{(1-\alpha)}
+\]
+
+Using our familiar method for finding confidence intervals, we know that the corresponding lower confidence bound is 
+\[
+\begin{aligned}
+\overline{X}-z_{1-\alpha}\frac{\sigma}{\sqrt{n}} && (\mu_l^*)
+\end{aligned}
+\]  
+(Understand the procedure: when the proposed alternative is greater than the null, we find the lower confidence bound.)
+
+It can be shown that $\mu^*_l$ is uniformly most accurate (shown in the next theorem).
+
+As it turns out, $(\dagger)$ is nothing more than a comparison of power functions.  
+
+**Theorem**  Let $\theta_l^*$ be a level $(1-\alpha)$ LCB for $\theta$ such that for each $\theta_0$ the associated test whose critical function $d(x, \theta_0)$ is given by 
+\[
+d(x, \theta_0) = 
+\begin{cases}
+1,& \ \text{if $\theta_l^*(x) > \theta_0$} \\
+0, & \ \text{otherwise}
+\end{cases}
+\]
+is uniformly most powerful level $\alpha$ for $H_0: \theta=\theta_0$ vs. $H_1: \theta> \theta_0$.  Then $\theta^*_l$ is uniformly most accurate at level $(1-\alpha)$.  
+**Proof**  Omitted by professor
+
+**February 03, 2016**  
+We now look at general methods and results when using the likelihood ratio test.  
+
+A couple of notes on the power of the likelihood ratio test  
+
+1) Generally not optimal in situations where the hypotheses are not simple; however the cases where it is not optimal tend to be the cases where no optimal test exists (by optimal we mean power).
+
+2) Up to now, we have been looking at one parameter models; these type of optimal tests do not exist for models with more than one parameter.  
+
+The general framework is similar to what we saw before.  We have observations $\mathbf{X} = (X_1, \dots X_n)$ with joint density or mass function (aka frequency function) $f(\mathbf{x}|\theta)$ where $\theta \in \Theta$ with $\Theta = \Theta_0 \cup \Theta_1$; and we wish to test $H_0: \theta \in \Theta_0$ vs. $H_1:\theta \in \Theta_1$.  We are opening up possibilities for what $H_0$ and $H_1$ could be.
+
+In the case of a composite hypothesis, we do this by evaluating each likelihood at the value $\theta$ that maximizes it yielding the generalized likelihood ratio
+\[
+\Lambda^* =\frac{\max_{\theta \in \Theta_0}L(\theta)}{\max_{\theta \in \Theta_1} L(\theta)}
+\]
+for which small values favor $H_1$.
+
+
+Typically, we rather use the statistic
+\[
+\Lambda=\frac{\max_{\theta \in \Theta_0}L(\theta)}{\max_{\theta \in \Theta}L(\theta)}
+\]
+The denominator represents the unrestricted maximum of the entire space, including $\Theta_0$.  
+
+Note that by doing this, $\Lambda$ is confined to values between 0 and 1.  
+
+Recall that we relied on likelihood ratios for simple hypotheses tests.  Now we're using MLEs.
+
+**Example**  Let $X_1, \dots, X_n$ be i.i.d. normal with mean $\mu$ and variance $\sigma^2$ (both unknown) and suppose we want to test $H_0: \mu=\mu_0$ vs. $H_1: \mu \neq \mu_0$.  First consider the denominator of $\Lambda$, the unrestricted space.  Last quarter we calculated the MLEs of $\mu$ and $\sigma^2$.
+\[
+\hat{\mu}=\overline{X} \ \ \text{and} \ \ \hat{\sigma}^2=\frac{1}{n}\sum_{i=1}^n (X_i - \overline{X})^2
+\]
+Now consider the numerator.  While under $H_0$, $\mu=\mu_0$, and the MLE of $\sigma^2$ is 
+\[
+\hat{\sigma}^2_0 = \frac{1}{n}\sum_{i=1}^n (X_i - \mu_0)^2
+\]
+We have managed to derive this under conditions of $H_0$, where we assume $\mu$ is known.  Then we have a 1-dimensional problem where we take the derivative of a likelihood function and solve for $\sigma^2$.
+
+Notice that under $H_0$, 
+\[
+\begin{aligned}
+L(\mu_0, \hat{\sigma}_0^2) &= (\hat{\sigma}_0^2 2\pi)^{-n/2}\exp\bigg(-\sum_{i=1}^n \frac{(X_i - \mu_0)^2}{2\hat{\sigma}_0^2}\bigg) \\
+  &= (\hat{\sigma}_0^2 2\pi)^{-n/2}\exp\bigg(-\frac{1}{2\hat{\sigma}_0^2} \sum_{i=1}^n (X_i - \mu_0)^2\bigg) \\
+  &= (\hat{\sigma}_0^2 2\pi)^{-n/2}\exp\bigg(-\frac{1}{2\hat{\sigma}_0^2} n \frac{1}{n} \sum_{i=1}^n (X_i - \mu_0)^2\bigg) \\
+  &= (\hat{\sigma}_0^2 2\pi)^{-n/2}\exp\bigg(-\frac{1}{2\hat{\sigma}_0^2} n \hat{\sigma}_0^2\bigg) \\  
+  &= (\hat{\sigma}^2_0 2 \pi)^{-n/2} e^{-n/2}
+\end{aligned}
+\]
+and similarly
+\[
+L(\hat{\mu}, \hat{\sigma}^2) =(\hat{\sigma}^2 2 \pi)^{-n/2} e^{-n/2}
+\]
+So the generalized likelihood ratio (LR) is
+\[
+\begin{aligned}
+\Lambda &=\frac{(\hat{\sigma}_0^2 2\pi)^{-n/2}e^{-n/2}}{(\hat{\sigma}^2 2\pi)^{-n/2}e^{-n/2}} \\
+ &= \bigg(\frac{\hat{\sigma}_0^2}{\hat{\sigma}^2}\bigg)^{-n/2}
+\end{aligned}
+\]
+So the likelihood ratio test will reject $H_0$ when $\Lambda \leq k$, where $k$ is calculated so that the test has level $\alpha$.  Though we have a test statistic, $\Lambda$, we cannot determine an appropriate $k$ since we don't know the distribution of $\Lambda$.  
+
+But note that if $\hat{\sigma}_0^2 > \hat{\sigma}^2$, then $\Big(\frac{\hat{\sigma}_0^2}{\hat{\sigma}^2}\Big)^{-n/2}$ will increase as $n$ increases.  But if $\hat{\sigma}_0^2 > \hat{\sigma}^2$ then $\Lambda$ moves in the opposite direction.  Regardless, we can conclude that $\Lambda$ is a monotonic function of $\hat{\sigma}_0^2/\hat{\sigma}^2$.
+
+Manipulating the term further, we find that
+\[
+\begin{aligned}
+\frac{\hat{\sigma}_0^2}{\hat{\sigma}^2} &= \frac{\frac{1}{n}\sum_{i=1}^n (X_i - \mu_0)^2}{\frac{1}{n}\sum_{i=1}^n (X_i - \overline{X})^2} \\
+  &= 1 + \frac{n(\overline{X} - \mu_0)^2}{\sum_{i=1}^n (X_i - \overline{X})^2} \\
+  &= 1 + n(\overline{X} - \mu_0)^2\frac{1}{\sum_{i=1}^n (X_i - \overline{X})^2} \\
+  &= 1 + n(\overline{X} - \mu_0)^2\frac{1}{s^2(n-1)} \\
+  &=1 + \frac{1}{n-1}\bigg(\frac{n(\overline{X} - \mu_0)^2}{s^2}\bigg) \\
+  &= 1 + \frac{1}{n-1}T^2 
+\end{aligned}
+\]
+where $T=\frac{\overline{X}-\mu}{s/\sqrt{n}}$ and $s$ is the usual sample standard deviation.  The terms $1$ and $\frac{1}{n-1}$ are constants, so we can focus on $T^2$ to determine its distribution.  And we know that, under $H_0$, $T$ has *t*-distribution with $df=n-1$ so that $T^2 \sim F_{(1,n-1)}$.
+
+Since $\Lambda$ is small when $T^2$ is large, we reject for large values of $T^2$ (or $|T|$).
+
+Note 
+\[
+|T| > t_{\alpha/2} \ \Longleftrightarrow \ |\overline{X} - \mu_0| > \frac{s}{\sqrt{n}}t_{\alpha/2}
+\]
+
+###Large Sample Theory  
+**Theorem**: Suppose that $X_1, \dots, X_n$ are i.i.d. random variables with density or mass function satisfying the usual conditions under the MLE framework (these are technical).  If the MLE $\hat{\theta}_n$ satisfies $\sqrt{n}(\hat{\theta}_n - \theta) \xrightarrow{d} N\Big(0, \frac{1}{I(\theta)}\Big)$, then the likelihood ratio statistic $\Lambda$ for testing $H_0: \theta = \theta_0$ satisfies
+\[
+-2\ln\Lambda = -2\Big[\max_{\theta \in \Theta_0} \ell(\theta) - \max_{\theta \in \Theta} \ell(\theta)\Big] \xrightarrow{d} v \sim \chi^2_{(1)}
+\]
+when $H_0$ is true.
+
+**Proof** Let $\ell(\theta) = \ln(f(x;\theta))$ and let $\ell'(\theta), \ell''(\theta)$ be its derivatives with respect to $\theta$.  Under the conditions of the theorem, 
+\[
+\sqrt{n}(\hat{\theta}_n - \theta) \xrightarrow{d} N\bigg(0, \frac{1}{I(\theta)}\bigg)
+\]
+Then if we were to multiply $\sqrt{n}(\hat{\theta}_n - \theta)$ by $\sqrt{I(\theta)}$, then   would converge in density to the standard normal distribution: 
+\[
+\sqrt{I(\theta)}\sqrt{n}(\hat{\theta}_n - \theta) \xrightarrow{d}  N(0,1)
+\]
+This is because the Fisher Information is a constant, so the mean would still be zero, and the variance of a constant can be taken out of the variance by squaring it (i.e. $\text{Var}(cX)=c^2\text{Var}(X)$).
+
+Next, if we were to square the result that would converge to the standard normal distribution, then we would have
+\[
+\Big[\sqrt{I(\theta)}\sqrt{n}(\hat{\theta}_n -\theta)\Big]^2 \xrightarrow{d} v \sim \chi^2_{(1)}
+\]
+This is true because squaring a standard normal distribution leads to a chi-square distribution.
+
+And if we apply the Delta method, continuous mapping theorem, and Slutsky's theorem (no clue what all this means), then (assuming $H_0$ is true) without the Fisher Information component we have
+\[
+n(\hat{\theta}_n - \theta)^2 \xrightarrow{d} \frac{v}{I(\theta)}
+\]
+This result will be applied later.
+
+Taking the natural log and doing a Taylor series expansion,
+\[
+\begin{aligned}
+-\ln\Lambda &= \sum_{i=1}^n [\ell(\hat{\theta}_n) - \ell(\theta_0)] \\
+  &= (\theta_0 - \hat{\theta}_n) \sum_{i=1}^n \ell' (\hat{\theta}_n) - \frac{1}{2}(\theta_0 - \hat{\theta}_n)^2 \sum_{i=1}^n \ell''(\theta^*_n) \\
+  &= -\frac{1}{2}n(\hat{\theta}_n - \theta_0)^2 \frac{1}{n} \sum_{i=1}^n \ell'' (\theta^*_n)
+\end{aligned}
+\]
+where $\theta^*_n$ lies between $\hat{\theta}_n$ and $\theta_0$. 
+
+Next, we analyze what we currently have as two separate parts: $-\frac{1}{2}n(\hat{\theta}_n - \theta_0)$ and $\frac{1}{n} \sum_{i=1}^n \ell'' (\theta^*_n)$.
+
+The first part we had concluded above:
+\[
+n(\hat{\theta}_n - \theta_0)^2 \xrightarrow{d} \frac{v}{I(\theta_0)}
+\]
+For the second part, when $H_0$ is true and as $n$ increases, there are two processes taking place: first, if $\hat{\theta}_n$ converges to $\theta_0$, and $\hat{\theta}_n \leq \theta^*_n \leq \theta_0$, then by the squeeze theorem $\theta^*_n$ converges $\theta_0$.  Second, $\frac{1}{n}\sum_{i=1}^n$ indicates we are computing the mean, so overall what we have is
+\[
+-\frac{1}{n} \sum_{i=1}^n \ell''(\theta^*_n) \xrightarrow{p} - E_{\theta_{0}}[\ell''(\theta_0)]=I(\theta_0)
+\]
+Last quarter, we derived multiple ways of finding the Fisher Information, one of them being equal to $- E_{\theta_{0}}[\ell''(\theta_0)]$.
+
+Putting both parts back together we can see the convergence
+\[
+\begin{aligned}
+-\frac{1}{2}n(\hat{\theta}_n - \theta_0)^2 \frac{1}{n} \sum_{i=1}^n \ell'' (\theta^*_n) \rightarrow& \frac{1}{2}\frac{v}{I(\theta)}I(\theta) \\
+=& \frac{1}{2}v
+\end{aligned}
+\]
+As defined above, $v \sim \chi^2_{(1)}$.  
+
+Then we can conclude that, with the assistance of Slutsky's Theorem, 
+\[
+-2\ln\Lambda \xrightarrow{d} v \sim \chi^2_{(1)}
+\]
+
+
+Note: This does have a multidimensional parameter space generalization that we will not discuss.
+
+**Example**  (Geometric Distribution) Consider testing $H_0:p=0.2$ with a sample of $n=20$ observations from a geometric distribution, and suppose the sample mean is $\overline{X}=3$.
+\[
+\begin{aligned}
+L(p) &= (1-p)^{\sum x_i -n}p^n \\
+  &= (1-p)^{\sum x_i -20} p^{20} \\
+  &= \bigg(\frac{p}{1-p}\bigg)^{20} (1-p)^{20\overline{X}}
+\end{aligned}
+\]
+We have the likelihood.  If we were to take the derivative, set $L'(p)=0$, and solve for $p$, we would find that
+\[
+MLE = \frac{1}{\overline{X}}
+\]
+The value under $H_0$ is $\ln(L(0.2))=-41.11$  
+Its unrestricted maximum value attained at the MLE, is $\ln(L(\frac{1}{3}))=-38.19$  
+Minus twice the difference yields
+\[
+\begin{aligned}
+-2[\ln(L(0.2))-\ln(L(\frac{1}{3}))] &= -2(-41.11 -(-38.19)) \\
+  &= 5.84
+\end{aligned}
+\]
+which under $H_0$, approximately follows $\chi^2_{(1)}$.  Then our p-value is
+\[
+P(\chi^2_{(1)} > 5.84) = 0.016
+\]
+
+
+**February 08, 2016**  
+**Example**  
+Consider testing $H_0: p=0.5$ with a sample of $m=20$ observations from a binomial distribution with $n=18$, and suppose the sample mean is $\overline{X} = 10$.  (Running 20 trials, each trial has 18 tests; At $p=0.5$ we would expect $X$ to be $9$).  Here
+\[
+L(p) = \prod_{i=1}^m \binom{n}{X_i} p ^{\sum X_i}(1-p)^{mn-\sum X_i}
+\]
+The generalized likelihood ratio is
+\[
+\Lambda=\frac{\max_{\theta \in \Theta_0}L(\theta)}{\max_{\theta \in \Theta}L(\theta)}
+\]
+For the numerator, the likelihood under $H_0$ is straightfoward.  $p_0$ is a specific value, so no maximum needs to be determined:
+\[
+L(0.5) =\bigg[\prod_{i=1}^m \binom{18}{X_i}\bigg](0.5)^{mn}
+\]
+
+Generically, we may use $\hat{p}$ to designate the unconstrained maximum, so the likelihood of the denominator is
+\[
+L(\hat{p}) = \prod_{i=1}^n \binom{n}{X_i} \hat{p}^{\sum X_i}(1-\hat{p})^{mn-\sum X_i}
+\]
+We have derived the mle for the unconstrained $0 \leq p \leq 1$ last quarter, which is $\hat{p}=\frac{\overline{X}}{n}$.  Plugging it back into the likelihood function is
+\[
+L(\hat{p}) = \prod_{i=1}^n \binom{n}{X_i} \bigg(\frac{\overline{X}}{n}\bigg)^{\sum X_i}\bigg(1-\frac{\overline{X}}{n}\bigg)^{mn-\sum X_i}
+\]
+Taking the ratio we get
+\[
+\begin{aligned}
+\Lambda &= \frac{\max_{\theta \in \Theta_0}L(\theta)}{\max_{\theta \in \Theta}L(\theta)} \\
+  &=\frac{0.5^{mn}}{\Big(\frac{\overline{X}}{n}\Big)^{\sum X_i}\Big(1-\frac{\overline{X}}{n}\Big)^{mn-\sum X_i}}
+\end{aligned}
+\]
+It would be possible to create an exact test if we could identify the distribution of $\Lambda$, or an isolated $\sum X_i$.  However, it appears too difficult to do so.  The alternative is to create an approximate test.  We plug in our known values:
+\[
+\begin{aligned}
+  &= \frac{0.5^{20 \cdot 18}}{\Big(\frac{10}{18}\Big)^{200}\Big(1-\frac{10}{18}\Big)^{20 \cdot 18- 200}} \\
+  &= 0.1079
+\end{aligned}
+\]
+Large Sample Theory tells us that, under $H_0$, the logarithm of the likelihood ratio multiplied by $-2$ approximately follows a chi-square distribution with $df=1$
+\[
+-2\ln \Lambda = - 2\ln(0.1079) =4.45
+\]
+
+
+```{r}
+1 - pchisq(q=4.45, df=1)
+qchisq(p=.95, df=1) # 95th quantile
+```
+
+Using $\alpha = 0.05$ we reject $H_0$ and claim $p$ is not $0.5$.
+
+To generalize, we reject $H_0$ when
+\[
+-2 \ln \Lambda \geq \chi^2_{(1-\alpha, 1)}
+\]
+
+###Goodness-of-Fit  
+Many times, we assume  particular model for given observations.  For example, given i.i.d. random variables $X_1, \dots, X_n$, we assume they have common density (or mass) function, $f(x; \theta)$, where $f$ is known and $\theta$ is unknown.
+
+In cases where we aren't sure about $f$, we can test whether a particular distribution "fits" our observed data.
+
+In some cases, this can be informally done via plots.  Other times, when the model has more significance, we can do a formal hypothesis test.
+
+###Likelihood Ratio Tests for the Multinomial Distribution  
+Suppose that we observe i.i.d. random variables $X_1, \dots, X_n$ from an unknown distribution we would like to test:
+
+- $H_0$: the $X_j$'s have density mass function $f(x;\boldsymbol{\theta})$ where $\boldsymbol{\theta}$ is $k$-dimensional vector.
+- $H_1$: the $X_j$'s have some other distribution.  
+
+The parameter may be known or unknown.  If it is unknown, we assume it is finite-dimensional.  
+
+The idea is to partition the support of $X$, say $S_X$, into $m$ disjoint subsets $S_1, \dots, S_m$ so that $S_X = \cup_{i=1}^m S_i$.
+
+Essentially, we are creating bins or groups where each group includes the observations belonging to that group.
+
+We then count the number of $X_j$'s that fall into each one of the subsets defining the random variables
+\[
+Y_i = \sum_{j=1}^n \mathbf{I}_{(X_j \in S_i)}; i=1, \dots, m
+\]
+($Y_i$ represents the number of observations in group $S_i$.  Each $X_j$ is considered against each subsetted bin, $S_i$.  $\sum Y_i$ would simply equal to the number of observations.)
+
+
+Because the $X_j$;s are i.i.d. , the random vector
+$\mathbf{Y} = (Y_i, \dots, Y_m)$ has a multinomial distribution.
+
+The multinomial pmf is
+\[
+P_{\boldsymbol{\theta}}(\mathbf{Y}=\mathbf{y})=\bigg(\frac{n!}{y_1!y_2! \cdots y_m!}\bigg) \prod_{i=1}^m P_\boldsymbol{\theta}(X_j \in S_i)^{y_i}
+\]
+
+Note that by design, $0 \leq P_{\boldsymbol{\theta}}(X_j \in S_i) \leq 1$ and $\sum_{i=1}^m P_{\boldsymbol{\theta}}(X_j \in S_i) = 1$
+
+For ease of notation, let $\phi_i = P_{\theta}(X_j \in S_i)$
+
+If we are interested in testing the null hypothesis that the $X_j$'s have density (mass) function $f(x; \boldsymbol{\theta})$ for $\boldsymbol{\theta} \in \Theta$, we can express this as 
+
+$H_0: \phi_i=p_i(\boldsymbol{\theta}); i=1, \dots m$  
+vs.  
+$H_1:$ the probabilities can be anything as long as they are nonnegative and sum to one.  
+
+Under $H_0$, the log-likelihood is
+\[
+\ln[L_0(\boldsymbol{\theta})]=\sum_{i=1}^m Y_i\ln(p_i(\theta))+\ln\bigg(\frac{n!}{Y_1!\cdots Y_n!}\bigg)
+\]
+and under $H_1$ the log-likelihood (no constraint)
+\[
+\ln [L_1(\boldsymbol{\theta})] = \sum_{i=1}^m Y_i \ln \phi_i + \ln \bigg(\frac{n!}{Y_1! \cdots Y_n!}\bigg)
+\]
+The maximum likelihood estimator of $\phi_i$ is 
+\[
+\hat{\phi}_i=\frac{Y_i}{n}=\hat{p}_i
+\]
+while the MLE of $\boldsymbol{\theta}$, if unknown, satisfies the equation
+\[
+\sum_{i=1}^m \frac{Y_i}{p_i(\hat{\theta})}p'_i(\hat{\boldsymbol{\theta}})=0
+\]
+where $p'_i(\boldsymbol{\theta})$ is the derivative of $p_i$ with respect to $\boldsymbol{\theta}$.
+
+
+
+
+
+
+The likelihood ratio becomes
+\[
+\begin{aligned}
+\Lambda &= \frac{p_1(\hat{\boldsymbol{\theta}})^{Y_1} \cdots p_m(\hat{\boldsymbol{\theta}})^{Y_m}}{\hat{p}_1^{Y_1} \cdots \hat{p}_m^{Y_m}} \\
+\Lambda  &= \prod_{i=1}^m \bigg(\frac{p_i(\hat{\boldsymbol{\theta}})}{\hat{p}_i}\bigg)^{Y_i} \\
+\ln \Lambda  &= \ln\Bigg[\prod_{i=1}^m \bigg(\frac{p_i(\hat{\boldsymbol{\theta}})}{\hat{p}_i}\bigg)^{Y_i}\Bigg] \\
+\ln \Lambda  &= \sum_{i=1}^m \ln \bigg( \frac{p_i(\hat{\boldsymbol{\theta}})}{\hat{p}_i}\bigg)^{Y_i} \\
+\ln \Lambda  &= \sum_{i=1}^m Y_i \ln \bigg( \frac{p_i(\hat{\boldsymbol{\theta}})}{\hat{p}_i}\bigg) \\
+\ln \Lambda  &= - \sum_{i=1}^m Y_i \ln \bigg( \frac{\hat{p}_i}{p_i(\hat{\boldsymbol{\theta}})}\bigg) \\
+-2 \ln \Lambda &= 2 \sum_{i=1}^m Y_i \ln \bigg(\frac{\hat{p}_i}{p_i(\hat{\boldsymbol{\theta}})}\bigg) \\
+  &=  2 \sum_{i=1}^m Y_i \ln \bigg(\frac{n \hat{p}_i}{p_i(n \hat{\boldsymbol{\theta}})}\bigg) \\
+  &= 2 \sum_{i=1}^m \text{Obs}_i \cdot \ln \bigg(\frac{\text{Obs}_i}{\text{Exp}_i}\bigg)
+\end{aligned}
+\]
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+If we let $n$ (sample size) tend to infinity while $m$ (number of bins/subsets) and $k$ (dimension of $\theta$) remained fixed, then we can apply the standard asymptotic theory for likelihood ratio tests we already discussed.
+
+We still need to determine the appropriate degrees of freedom.  While there exists formal theorems for this, we'll approach this from a heuristical point of view under $H_1$.  
+
+Under $H_1$, we know the sum of probabilities is 1, so knowing $m-1$ of them tells us all of them (so we start with $df=m-1$). 
+
+Furthermore, if $\boldsymbol{\theta}$ is unknown, we lose $k$ degrees of freedom for estimating $\boldsymbol{\theta}$.  Therefore, the appropriate degrees of freedom is $m-k-1$.  
+
+In other words, the degrees of freedom is the number of cells minus the number of parameters you have to estimate.
+
+**Example**  Consider the following summarized data on touchdowns (TDs) scored in football games by the Patriots
+
+TDs |  $0$  |  $1$  |  $2$  |  $3$  |  $4$  |  $\geq 5$  
+----|-------|-------|-------|-------|-------|------------
+Freq| 252   | 344   | 180   | 104   |  28   |  16
+
+We want to test to see if the number of touchdowns scored in a game follow a Poisson distribution.  As it turns out, there is no closed-form solution of the MLE of $\lambda$, say $\hat{\lambda}$.  Using `R`,
+
+```{r}
+observed <- c(252, 344, 180, 104, 28, 16)
+n <- sum(observed)
+lik <- function(lambda) {
+  sum1 <- dmultinom(x=observed, size=924, prob=c(dpois(x=0:4, lambda=lambda), 1-ppois(q=4, lambda=lambda)))
+  return(sum1)
+}
+mle <- optimize(f=lik, interval=c(1, 2), maximum=TRUE)
+mle
+```
+
+So $\hat{\lambda} = 1.311$.  Next, calculate expected values based on $\hat{\lambda}$. 
+```{r}
+expected <- n*c(dpois(x=0:4, lambda=mle$maximum), 1-ppois(q=4, lambda=mle$maximum))
+```
+Then calculate the likelihood ratio $-2\ln \Lambda$.
+```{r}
+2*sum(observed*log(observed/expected)) # = -2ln(Lambda)
+```
+
+Due to large sample theory, we know that $-2 \ln \Lambda = 10.87$ under $H_0$ follows $\chi^2_{(4)}$.  (The degrees of freedom is the number of bins, $m=6$, minus 1, minus the number parameters estimated (i.e. $\hat{\lambda}$).)
+
+If $\alpha=0.05$, then our rejection region includes values that exceed `qchisq(p=0.95, df=4)`=`r round(qchisq(0.95, 4), 3)`.
+
+Since $10.87 > \chi^2_{(.95, 4)}=9.49$ we reject $H_0$.  The Poisson model is not appropriate.
+
+**February 10, 2016**  
+**Example**  
+Suppose we have the following observed data $(m=300)$.  
+
+Values |  0  |  1  |  2  |  3  |  4  
+-------|-----|-----|-----|-----|-----  
+Count  | 48  | 123 | 85  | 38  | 6   
+
+We want to test the hypothesis that these observations came from a binomial distribution with $n=4$.  We know our estimator $p$ is $\hat{p} = \frac{\overline{X}}{n}$.
+
+```{r}
+x <- c(48, 123, 85, 38, 6)
+x.bar <- sum(x*0:4)/300
+p.hat <- x.bar/4
+expected <- dbinom(x=0:4, size=4, prob=p.hat)*300
+2*sum(x*log(x/expected))
+```
+So $-2 \ln \Lambda = 2.43$, which, under $H_0$, follows a chi-square distribution with $df=n-1-1=3$.  
+
+For $\alpha = 0.05$, we could use a table to find the rejection region which would include values that exceed $7.81$.  So we fail to reject $H_0$.  The binomial distribution is a reasonable model for this data.
+
+###Comparison with Pearson's Statistic  
+We will not prove it, however, the transformed likelihood ratio test statistic (i.e. $-2 \ln \Lambda$) is asymptotically equivalent to the Pearson statistic
+\[
+\chi^2 = \sum_{i=1}^m \frac{(\text{Obs}_i - \text{Exp}_i)^2}{\text{Exp}_i}
+\]
+
+`chisq.test()` is a built-in function that can calculate the Pearson statistic:
+```{r}
+chisq.test(x=x, p=c(dbinom(x=0:4, size=4, prob=p.hat)))
+```
+However, be aware that the degrees of freedom is wrong for this calculation.  It does not take into account that the parameter $p$ is estimated, and therefore must remove an extra degree of freedom.  The correct $df$ is $3$.
+
+Using `chisq.test()` for the football example from the previous lecture:
+```{r}
+chisq.test(x=c(252,344,180,104,28,16), p=c(dpois(x=0:4, lambda=1.3118), 1-ppois(q=4, lambda=1.3118)))
+```
+Again, the parameter used was estimated, so the correct degrees of freedom is $4$.
+
+###9.6 Poisson Dispersion Test  
+Unlike the previous examples, we now consider a specific alternative rather than letting the probabilities only be constrained to be nonnegative and sum to one.
+
+Under the null hypothesis, we assume the observations are i.i.d. Poisson with parameter $\lambda$.  However, under $H_1$, the observations are independent Poisson but with possible all different rates, $\lambda_1, \dots, \lambda_n$ (i.e. not i.i.d.).
+
+Under $H_0$, the MLE of $\lambda$ is $\hat{\lambda}=\overline{X}$ whereas under the alternative, $\tilde{\lambda}_i=X_i$.  The likelihood ratio becomes
+\[
+\begin{aligned}
+\Lambda &= \frac{\prod_{i=1}^n \frac{\hat{\lambda}^{X_i}e^{-\hat{\lambda}}}{X_i!}}{\prod_{i=1}^n \frac{\tilde{\lambda}^{X_i}e^{-\tilde{\lambda}}}{X_i!}} \\
+  &= \prod_{i=1}^n \frac{\hat{\lambda}^{X_i}e^{-\hat{\lambda}}}{X_i!} \frac{X_i!}{\tilde{\lambda}^{X_i}e^{-\tilde{\lambda}}} \\
+  &= \prod_{i=1}^n \bigg(\frac{\hat{\lambda}}{\tilde{\lambda}}\bigg)^{X_i}e^{\tilde{\lambda} -\hat{\lambda}} \\
+  &= \prod_{i=1}^n \bigg(\frac{\overline{X}}{X_i}\bigg)^{X_i}e^{X_i -\overline{X}}
+\end{aligned}
+\]
+Take the log of $\Lambda$ and multiply by $-2$ to get the usual likelihood ratio statistic
+\[
+\begin{aligned}
+- 2 \ln \Lambda &= -2 \ln \Bigg[\prod_{i=1}^n \bigg(\frac{\overline{X}}{X_i}\bigg)^{X_i}e^{X_i -\overline{X}}\Bigg] \\
+  &= -2 \sum_{i=1}^n \ln\Bigg[\bigg(\frac{\overline{X}}{X_i}\bigg)^{X_i}e^{X_i -\overline{X}}\Bigg] \\
+  &= -2 \sum_{i=1}^n \ln\bigg(\frac{\overline{X}}{X_i}\bigg)^{X_i} + \ln e^{X_i -\overline{X}} \\
+  &=-2 \sum_{i=1}^n \bigg[X_i \ln \bigg(\frac{\overline{X}}{X_i}\bigg) + (X_i - \overline{X})\bigg] \\
+  &= -2 \sum_{i=1}^n X_i \ln \bigg(\frac{\overline{X}}{X_i}\bigg) -2 \sum_{i=1}^n (X_i - \overline{X})
+\end{aligned}
+\]
+Note that the sum of deviances equals zero: $\sum (X_i - \overline{X})$.  So then we have
+\[
+\begin{aligned}
+- 2 \ln \Lambda &= - 2 \sum_{i=1}^n X_i \ln\bigg(\frac{\overline{X}}{X_i}\bigg) + 0 \\
+  &= 2 \sum_{i=1}^n X_i \ln\bigg(\frac{X_i}{\overline{X}}\bigg)
+\end{aligned}
+\]
+Using the Taylor series expansion, we get 
+\[
+\begin{aligned}
+- 2 \ln \Lambda &= 2 \sum_{i=1}^n X_i \bigg(\frac{X_i}{\overline{X}}\bigg) \\
+  &\approx 2 \sum_{i=1}^n \bigg[(X_i - \overline{X}) + \frac{1}{2}(X_i - \overline{X})^2 \frac{1}{\overline{X}} + R_n\bigg]
+\end{aligned}
+\]
+We have another sum of deviances which equals zero, and we treat $R_n$ as a negligible value.  So we have
+\[
+\begin{aligned}
+- 2 \ln \Lambda  &\approx \sum_{i=1}^n \frac{1}{\overline{X}}(X_i - \overline{X})^2 \\
+  &= \frac{1}{\overline{X}} \sum_{i=1}^n (X_i - \overline{X})^2
+\end{aligned}
+\]
+Under $H_0$, this will have a chi-square distribution with $n-1$ degrees of freedom ($n$ degrees of freedom for $\lambda_1, \dots, \lambda_n$ and minus one for $\lambda$ for $H_0$).  *WHY?*
+
+
+Now take the approximation and multiply the numerator and denominator by $n$:
+
+\[
+\begin{aligned}
+- 2 \ln \Lambda  &\approx \frac{1}{\overline{X}} \sum_{i=1}^n (X_i - \overline{X})^2 \\
+  &= \frac{n\frac{1}{n}\sum_{i=1}^n (X_i - \overline{X})^2}{\overline{X}}  \\
+  &= n \frac{\sigma^2}{\overline{X}}
+\end{aligned}
+\]
+Recall that for the Poisson distribution, the mean and variance are the same: $\mu=\sigma^2=\lambda$.  This means that if $H_0$ is true, we expect this statistic to be close to $n$:
+\[
+- 2 \ln \Lambda \approx n \frac{\sigma^2}{\overline{X}} = n \frac{\lambda}{\lambda} = n
+\]
+Notice that this is $n$ times the estimated variance over the estimated mean.  
+
+As usual, large values favor $H_1$.  
+
+If the alternative is true, the variance tends to be larger than the mean in which case we expect to see a test statistic significantly  larger than $n$.  
+
+**Example**  
+Consider the previous football example, but with all the bins specified:
+
+TDs |  $0$  |  $1$  |  $2$  |  $3$  |  $4$  |  $5$  | $6$ | $7$
+----|-------|-------|-------|-------|-------|-------|-----|-----
+Freq| 252   | 344   | 180   | 104   |  28   |  10   | 4   | 2
+
+The estimated variance is 
+\[
+\hat{\sigma}^2 = \frac{0^2 252+ 1^2 344 + 2^2 180 + 3^2 104 + 4^2 28 + 5^2 10 + 6^2 4 + 7^2 2}{924} = 1.44
+\]
+The test statistic is 
+\[
+\frac{924 \cdot 1.44}{1.32} = 1015
+\]
+which under $H_0$, follows $\chi^2_{(923)}$
+```{r}
+1 - pchisq(q=1015, df=923)
+```
+
+If we set $\alpha=0.05$, then we can strongly reject $H_0$.  
+
+What if we only have tables without $df=923$?
+
+A chi-square distribution with $df=m$ can be though of as the sum of i.i.d. $\chi^2_{(1)}$.  So if $V \sim \chi^2_{(m)}$,
+\[
+\frac{V-m}{\sqrt{2m}} \xrightarrow{d} N(0,1) \ \ \ \text{as} \ \ \ m \to \infty
+\]
+So if $H_0$ is true,
+\[
+\frac{T - (m-1)}{\sqrt{2(m-1)}} \dot{\sim} N(0,1)
+\]
+($\dot{\sim}$ means that it approximately follows)  
+Then
+\[
+\begin{aligned}
+\text{p-value} &\approx P\bigg(\frac{T-923}{\sqrt{2(923)}} > \frac{1015 - 923}{\sqrt{2(923)}}\bigg) \\
+  &= P(Z > 2.14) \\
+  &= 0.016
+\end{aligned}
+\]
+You can use this method when the degrees of freedom is large.
+
+**February 17, 2016**  
+
+###9.8: Probability Plots  
+One way to visually assess the fit of the data to a theoretical distribution is to plot what we observed against what we expect to have observed.
+
+The book gives an illustration with the uniform.
+
+**Theorem** (Exponential) Let $x_{(1)}, \dots x_{(n)}$ be the ordered statistics of a random sample of size $n$ drawn from the exponential distribution with mean $\frac{1}{\lambda}$.
+
+Then $d_1=x_{(1)}, d_2=x_{(2)}-x_{(1)}, \dots, d_n=x_{(n)}-x_{(n-1)}$ are independently distributed and $d_r$ is exponentially distributed with pdf
+\[
+f(d_r)= (n-r+1)\lambda \exp\{-\lambda (n+r - 1)d_r\}, \ d_r>0
+\]
+**Proof**   Recall that a joint pdf of $x_{(1)}, \dots, x_{(n)}$ is given by
+\[
+f_{1,2,\dots,n}(x_1, \dots, x_n) = n!\lambda^n \exp\{-\lambda \sum_{i=1}^n x_i\} \ \ \ \text{for} x_1 < x_2 < \cdots < x_n < \infty
+\]
+$d_1=x_1, x_2=d_1+d_2, x_3=d_3+x_2=d_1+d_2+d_3, \dots, x_n = \sum_{i=1}^n d_i$ and $|J|=1$.
+
+Then the joint pdf of $d_1, \dots, d_n$ is given by 
+\[
+\begin{aligned}
+f(d_1, \dots, d_n) &= n!\lambda^n \exp\{-\lambda[nd_1 + (n-1)d_2 + \cdots + 2d_{n-1} + d_n]\} \\
+  &= n\lambda \exp\{-\lambda nd_1\} \cdot (n-1)\lambda \exp\{-\lambda (n-1)d_2\} \cdots \underbrace{(n-r+1)\lambda \exp\{-\lambda(n-r+1)d_r\}}_{f(d_r)} + \cdots + \lambda \exp\{-\lambda d_n\}
+\end{aligned}
+\]
+We have completed the proof.
+
+The previous theorem makes it easy to find the expected value of any of the order statistics.  Since $x_{(r)}=\sum_{i=1}^r d_i$ and the $d_i$'s are independent
+\[
+\begin{aligned}
+E(X_{(r)}) &= \sum_{i=1} E(d_i) \\
+  &= \sum_{i=1}^r \frac{1}{\lambda(n-i+1)} \\
+  &= \frac{1}{\lambda} \sum_{i=1}^r \frac{1}{n-i+1}
+\end{aligned}
+\]
+
+**Example**  Generate 1000 observations in `R` and create the probability plot previously described.
+
+```{r fig.width=4, fig.height=4}
+lambda <- 4 # arbitrarily selected
+x <- rexp(n=1000, rate=lambda)
+exp.vals <- numeric(1000)
+c <- 1/(1000-1:1000 + 1)
+for (i in 1:1000) exp.vals[i]=sum(c[1:i])
+plot(x=sort(x), y=exp.vals/lambda, xlim=c(0,2), ylim=c(0,2))
+abline(a=0, b=1, col='red') # represents observed=expected
+```
+
+A different example but with a bad fit.
+```{r fig.width=4, fig.height=4}
+x <- rexp(n=1000, rate=6)
+plot(x=sort(x), y=exp.vals/lambda, xlim=c(0,2), ylim=c(0,2))
+abline(a=0, b=1, col='red')
+```
+
+An example with a really bad fit.
+```{r fig.width=4, fig.height=4}
+x <- rnorm(n=1000, mean=0.6, sd=0.13)
+plot(x=sort(x), exp.vals/lambda, xlim=c(0,2), ylim=c(0,2))
+abline(a=0, b=1, col='red')
+```
+
+It can be shown (possibly learned in STAT 6204) that if $X$ is a continuous random variable with a strictly increasing cdf, $F_x$, and we let $Y=F_x(X)$, then $Y \sim U(0,1)$.
+
+For the uniform random variable on the interval $(0,1)$, it can be shown that 
+\[
+E(X_{(k)})=\frac{k}{n+1}
+\]
+where $X_{(k)}$ is the $k^{th}$ ordered statstic.  
+
+Therefore, we can plot
+\[
+F(X_{(k)}) \ \ \text{vs.} \ \ \frac{k}{n+1}
+\]
+or, equivalently,
+\[
+X_{(k)} \ \ \text{vs.} \ \ F^{-1}\bigg(\frac{k}{n+1}\bigg)
+\]
+(use whichever is easier to calculate)
+
+**Example** (Exponential)
+```{r fig.width=4, fig.height=4}
+lambda <- 4
+alt <- qexp(p=1:1000/1001, rate=lambda)
+x <- rexp(n=1000, rate=lambda)
+plot(x=sort(x), y=alt)
+
+alt1 <- pexp(q=sort(x), rate=lambda)
+plot(x=alt1, y=1:1000/1001)
+```
+
+**Example** (Normal)
+```{r fig.width=4, fig.height=4}
+x1 <- rchisq(n=1000, df=2)
+x2 <- runif(n=1000)
+x3 <- rchisq(n=1000, df=40)
+x4 <- rnorm(n=1000, mean=0, sd=1)
+qu <- pnorm(q=sort(x1), mean=mean(x1), sd=sd(x1))
+plot(x=qu, y=1:1000/1001)
+qu <- pnorm(q=sort(x2), mean=mean(x2), sd=sd(x2))
+plot(x=qu, y=1:1000/1001)
+qu <- pnorm(q=sort(x3), mean=mean(x3), sd=sd(x3))
+plot(x=qu, y=1:1000/1001)
+qu <- pnorm(q=sort(x4), mean=mean(x4), sd=sd(x4))
+plot(x=qu, y=1:1000/1001)
+
+```
+
+Another useful plot is comparing two distributions to see if they come from the same family
+```{r fig.width=4, fig.height=4}
+qu1 <- pnorm(q=sort(x3), mean=mean(x3), sd=sd(x3))
+qu2 <- pnorm(q=sort(x4), mean=mean(x4), sd=sd(x4))
+plot(x=qu1, y=qu2)
+```
+
+Note that the mean and standard deviations are actually different, but `pnorm()` normalizes the data so that mean and standard deviation are not taken into account in the comparison.
+
+If mean and standard deviation were taken into account, then the plot comparison would look like
+```{r fig.width=5, fig.height=4}
+plot(x=sort(x3), y=sort(x4))
+```
+
+**February 22, 2016**  
+
+###9.9: Tests for Normality  
+There are many tests to do this.  In SAS, usually results are given for multiple tests.
+
+One of these is to see how linear the points of the probability plot are.
+
+We can do this by looking at the correlation of the points.  This is called the Shapiro-Wilk test.  The closer the correlation is to one, the more evidence supporting normality.  The null hypothesis is that the data come from the normal distribution.  (Shapiro-Wilk does not calculate standard Pearson correlation, $\rho$.)
+
+The Shapiro-Wilk test is very powerful.  This means that the test can detect very small deviations from normality.  
+
+For very large sample sizes, the Shapiro-Wilk almost always rejects $H_0$ (normality).  
+
+In practice, we look at the test statistic (correlation) in large sample situations where $H_0$ is rejected.  **A rule of thumb is to accept (approximate) normality for correlation values greater than 0.95.**
+
+*Note to self: plot graphs*
+When $n=30$:
+```{r}
+x1 <- rchisq(n=30, df=2)
+x2 <- runif(n=30)
+x3 <- rchisq(n=30, df=40)
+x4 <- rnorm(n=30)
+shapiro.test(x1)
+shapiro.test(x2)
+shapiro.test(x3)
+shapiro.test(x4)
+```
+
+Now note the difference in the *p*-value when the sample size is increased to $n=1000$:
+```{r}
+x1 <- rchisq(n=1000, df=2)
+x2 <- runif(n=1000)
+x3 <- rchisq(n=1000, df=40)
+x4 <- rnorm(1000)
+shapiro.test(x1) # chi-sq, df=2
+shapiro.test(x2) # uniform
+shapiro.test(x3) # chi-sq, df=40 (practically normally distributed)
+shapiro.test(x4) # standard norm distributed
+```
+
+
+Another test we could use is the Kolmogorov-Smirnov (K-S) test which is a nonparametric test for equality of continuous distributions.  
+
+This can be used to compare a sample to a theoretical distributions or compare two samples.
+
+The test statistic is the largest difference of the theoretical cdf and ecdf (or two ecdf's) as a function of $x$ for all $x$ in the support of $x$.  
+
+```{r}
+ks.test(x=pnorm(sort(x1), mean(x1), sd(x1)), y=1:1000/1001)
+ks.test(x=(x1 - mean(x1))/sd(x1), y='pnorm')
+ks.test(x=x1, y=x3) # order does not matter
+ks.test(x=x4, y=x3)
+ks.test(x=(x4-mean(x4))/sd(x4), y='pnorm')
+```
+
+The Kolmogorov-Smirnov test is nonparametric (makes fewer assumptions about data), so it is a less powerful test than the Shapiro-Wilk test.
+
+###Chapter 11: Two Sample Inference  
+All of these tests were presented in STAT 6304, and we will now focus on the theory.
+
+###11.2: Independent Samples  
+The following methods are based on the assumption that $X_1, \dots, X_n$ is a random sample from a normal distribution with mean $\mu_X$ and $\sigma_X^2$, independent from $Y_1, \dots, Y_m$ a random sample from a normal distribution with mean $\mu_Y$ and variance $\sigma_Y^2$.
+
+Many of the hypothesis tests we do will hold approximately if normality is violated as long as $n$ and $m$ are large (CLT).
+
+**Same Variance**  
+We want to estimate the difference in population means when the variances are known and equal.
+
+From your prior courses, under the previous assumptions
+\[
+\overline{X} - \overline{Y} \sim N\bigg(\mu_X - \mu_Y, \frac{\sigma^2}{n} + \frac{\sigma^2}{m}\bigg)
+\]
+
+- Since the variances are the same for $X_i$ and $Y_i$, subscripts for $\sigma^2_X, \sigma^2_Y$ are removed.
+- Since $\overline{X}$ and $\overline{Y}$ are independent, the variance of their difference is the sum of their variances: $Y = \sum a_iX_i \Longrightarrow \sigma_Y^2 = \sum a_i^2\sigma_i^2$.
+
+
+Consider the test
+\[
+H_0: \mu_X = \mu_Y \ \ \ \text{vs.} \ \ \ H_1: \mu_X \neq \mu_Y
+\]
+
+In order to find the likelihood ratio test, we must find the ratio of the maximized likelihood functions under both hypotheses.
+
+\[
+L(\mu_X, \mu_Y) = \prod_{i=1}^n \frac{1}{\sqrt{2 \pi \sigma^2}} \exp\bigg\{-\frac{1}{2\sigma^2}(X_i - \mu_X)^2\bigg\} \cdot \prod_{j=1}^m \frac{1}{\sqrt{2 \pi \sigma^2}} \exp\bigg\{-\frac{1}{2\sigma^2}(Y_j - \mu_Y)^2\bigg\}
+\]
+
+yielding log-likelihood
+\[
+\ell(\mu_X, \mu_Y) = - \frac{m+n}{n}\ln(2 \pi \sigma^2) - \frac{1}{2\sigma^2}\bigg[\sum_{i=1}^n (X_i - \mu_X)^2 + \sum_{j=1}^m (Y_j - \mu_Y)^2\bigg]
+\]
+under $H_0$, $\mu_X=\mu_Y=\mu_0$.  It is trivial to show this function is maximized at
+\[
+\hat{\mu}_0 = \frac{1}{m+n}\bigg(\sum_{i=1}^n X_i + \sum_{j=1}^m Y_j \bigg) = \frac{1}{m+n}(n\overline{X} + m\overline{Y})
+\]
+where $\frac{n\overline{X} + m\overline{Y}}{m+n}$
+Similarly, under $H_1$, we have
+\[
+\hat{\mu}_X = \overline{X} \ \ \ \text{and} \ \ \ \hat{\mu}_Y = \overline {Y}
+\]
+
+- this makes intuitive sense since if $\mu_X \neq \mu_Y$, then calculating $\mu_X$ doesn't require knowing the observations about $Y$.
+
+Taking the ratio, we get, after simplification
+\[
+\begin{aligned}
+\Lambda &= \frac{L(\hat{\mu}_X, \hat{\mu}_Y) \ | \ H_0}{L(\hat{\mu}_X, \hat{\mu}_Y) \ | \ H_1} \\
+\log \Lambda &= \log \bigg(\frac{L(\hat{\mu}_0)}{L(\hat{\mu}_X, \hat{\mu}_Y)}\bigg) \\
+-2 \log \Lambda &= - 2 \log \bigg(\frac{L(\hat{\mu}_0)}{L(\hat{\mu}_X, \hat{\mu}_Y)}\bigg) \\
+                &= - 2 \bigg(\frac{\ell(\hat{\mu}_0)}{\ell(\hat{\mu}_X, \hat{\mu}_Y)}\bigg) \\
+                &= 2 \bigg(\frac{\ell(\hat{\mu}_X, \hat{\mu}_Y)}{\ell(\hat{\mu}_0)}\bigg) \\
+                &= 2 [\ell(\hat{\mu}_X, \hat{\mu}_Y) - \ell(\hat{\mu}_0)] \\
+  &= - \frac{1}{\sigma^2}\bigg[\sum_{i=1}^n(X_i - \overline{X})^2 + \sum_{j=1}^m(Y_j - \overline{Y})^2 \bigg] + \frac{1}{\sigma^2}\bigg[\sum_{i=1}^n(X_i - \hat{\mu}_0)^2 + \sum_{j=1}^m(Y_j - \hat{\mu}_0)^2 \bigg]
+\end{aligned}
+\]
+Note that as seen multiple times in the past
+\[
+\begin{aligned}
+\sum_{i=1}^n (X_i - \hat{\mu}_0)^2 &= \sum_{i=1}^n X_i^2 - 2X_i \hat{\mu}_0 + \hat{\mu}_0^2 \\
+  &= \sum_{i=1}^n \Big[X_i^2 - 2X_i \hat{\mu}_0 + \hat{\mu}_0^2 + 2\overline{X}^2 - 2\overline{X}^2 \Big] \\
+  &= \sum_{i=1}^n \Big[X_i^2 - 2X_i \hat{\mu}_0 + \hat{\mu}_0^2  + \overline{X}^2 + \overline{X}^2 - 2\overline{X}\underbrace{\hat{\mu}_0}_{=\overline{X}} \Big] \\
+  &= \sum_{i=1}^n \Big[(X_i^2 - 2X_i \hat{\mu}_0 + \overline{X}^2) + (\overline{X}^2 - 2\overline{X}\hat{\mu}_0  + \hat{\mu}_0^2) \Big] \\
+  &= \sum_{i=1}^n \Big[(X_i - \overline{X})^2 + (\overline{X} - \hat{\mu}_0)^2 \Big] \\
+  &= \bigg[\sum_{i=1}^n (X_i - \overline{X})^2\bigg] + n(\overline{X} - \hat{\mu}_0)^2 
+\end{aligned}
+\]
+Similarly,
+\[
+\sum_{j=1}^m(Y_j - \hat{\mu}_0)^2 = \sum_{j=1}^m(Y_j - \overline{Y})^2 + m(\overline{Y} - \hat{\mu}_0)^2
+\]
+Therefore, 
+\[
+\begin{aligned}
+- 2 \log \Lambda &= \frac{1}{\sigma^2}[n(\overline{X} - \hat{\mu}_0)^2 + m(\overline{Y} - \hat{\mu}_0)^2] \\
+  &= \frac{1}{\sigma^2}\bigg[n \bigg(\frac{m(\overline{X}-\overline{Y})}{m+n}\bigg)^2 + m\bigg(\frac{n(\overline{Y}-\overline{X})}{m+n}\bigg)^2 \bigg] \\
+  &= \frac{1}{\sigma^2}\Bigg[\frac{nm^2(\overline{X} - \overline{Y})^2}{(m+n)^2} + \frac{mn^2(\overline{X} - \overline{Y})^2}{(m+n)^2} \Bigg] \\
+  &= \frac{1}{\sigma^2}\bigg[\frac{nm(\overline{X} - \overline{Y})^2}{m+n}\bigg]  \\
+  &= \Bigg(\frac{(\overline{X} - \overline{Y})}{\sqrt{\sigma^2 \Big(\frac{1}{n} + \frac{1}{m}\Big)}}\Bigg) \\
+  &=Z^2 \sim \chi^2_{(1)}
+\end{aligned}
+\]
+which will be large when
+\[
+\Big| Z \Big| = \frac{\big|\overline{X} - \overline{Y}\big|}{\sqrt{\sigma^2 \Big(\frac{1}{n} + \frac{1}{m}\Big)}} = \sqrt{\frac{mn}{m+n}} \frac{\big| \overline{X} - \overline{Y} \big|}{\sigma}
+\]
+is large.
+
+This is the usual 2-sample *z*-test.
+
+The book goes into the case where $\sigma^2$ is unknown.
+
+In this case, the test rejects for large values of $|T|$, where 
+\[
+T=\sqrt{\frac{mn}{m+n}}\bigg(\frac{\overline{X} - \overline{Y}}{s}\bigg) \\
+\text{and} \\
+s^2=\frac{(m+n)\tilde{\sigma}^2}{m+n-2} = \frac{1}{m+n-2} \bigg[\sum_{i=1}^n (X_i - \overline{X})^2 + \sum_{j=1}^m (Y_i - \overline{Y})^2 \bigg]
+\]
+We have previously proved that 
+\[
+\frac{\overline{X}}{\sigma}, \frac{\overline{Y}}{\sigma}, \sum_{i=1}^n (X_i - \overline{X})^2, \text{and} \ \sum_{j=1}^m (Y_i - \overline{Y})^2
+\]
+are independent and distributed as
+\[
+N\bigg(\frac{\mu_X}{\sigma}, \frac{1}{n}\bigg), N\bigg(\frac{\mu_Y}{\sigma}, \frac{1}{m}\bigg), 
+\chi^2_{(n-1)}, \text{and} \ \chi^2_{(m-1)}, \ \text{respectively.}
+\]
+Using the additive property of the chi-square distribution, 
+\[
+\frac{m+n-2}{\sigma^2}s^2 \sim \chi^2_{(m+n-2)}
+\]
+and that 
+\[
+\sqrt{\frac{mn}{m+n}}\frac{(\overline{X} - \overline{Y})}{\sigma} \sim N(0,1)
+\]
+which are independent of each other.
+
+Therefore, 
+\[
+\begin{aligned}
+T &= \sqrt{\frac{mn}{m+n}}\frac{(\overline{X}-\overline{Y})}{s} \\
+  &= \sqrt{\frac{mn}{m+n}}\frac{\frac{(\overline{X}-\overline{Y})}{\sigma}}{\frac{(m+n-2)s^2}{\frac{\sigma^2}{m+n-2}}}
+\end{aligned}
+\]
+And by definition,
+\[
+T \sim t_{(n+m-2)}
+\]
+under $H_0$.
+
+
+**February 24, 2016**  
+**Example**  Illustrating how normality affects results using `t_test_dist.R` script.  
+
+We are given that the variances from the two populations are known and the same.  We saw from the end of the previous lecture  that our test statistic $T$, under $H_0$, follows a *t*-distribution with $df=n+m-2$.  If $n=m=10$, then the distribution looks something like
+```{r fig.height=4, fig.width=5}
+n <- 10
+m <- 10
+upper.bound <- qt(p=.975, df=8)
+lower.bound <- qt(p=.025, df=8)
+density.t <- dt(x=upper.bound, df=8)
+ggplot(data.frame(x=c(-5, 5)), aes(x)) + 
+  stat_function(fun=function(x) dt(x=x, df=n+m-2)) + 
+  geom_segment(mapping=aes(x=lower.bound, y=0, xend=lower.bound, yend=density.t), size=.5, colour="red") +
+  geom_segment(mapping=aes(x=upper.bound, y=0, xend=upper.bound, yend=density.t), size=.5, colour="red") 
+```
+
+In this special case where the variances are known to be equal, then the test statistic $T = \sqrt{\frac{mn}{m+n}}\frac{(\overline{X}-\overline{Y})}{s}$ where $s^2= \frac{1}{m+n-2} \Big[\sum_{i=1}^n (X_i - \overline{X})^2 + \sum_{j=1}^m (Y_i - \overline{Y})^2 \Big]$ follows a *t*-distribution with $n+m-2$ degrees of freedom.
+
+Here we are calculating the value $T$ manually as well as using `t.test()`.  Both will give the same results.  
+
+In the manual calculation, the two-sided *p*-value calculates the probability of having more extreme values than $|T|$.  
+
+- If $T<0$, then the *p*-value is `2*pt(q=T, df=n+m-2)`.
+- If $T>0$, then the *p*-value is `2*( 1 - pt(q=T, df=n+m-2) )`.
+
+When the means are in fact equal, we expect that $5\%$ of our simulations will generate *p*-values that are less than $0.05$.  That is to say, when the null hypothesis is in fact true ($\mu_X = \mu_Y$), we will falsely reject it $5\%$ of the time.
+
+```{r}
+# population distribution effect on independent t-test with equal variances
+
+var.x <- 9    # true population variance of the Xs and Ys
+var.y <- 9	  # Our test requires that `var.x` = `var.y`
+mu.x <- 5			# true population mean of the Xs
+mu.y <- 5			# true population mean of the Ys
+n <- 10			  # sample size of Xs
+m <- 10			  # sample size of Ys
+
+B <- 5000
+p.val.manual <- numeric(B) # calculating p-values manually
+p.val.auto <- numeric(B)   # calculating p-values using `t.test()`
+for (i in 1:B) {
+  x <- rnorm(n=n, mean=mu.x, sd=sqrt(var.x))
+  y <- rnorm(n=m, mean=mu.y, sd=sqrt(var.y))
+  sample.var <- (sum( (x-mean(x))^2 ) + 
+                 sum( (y-mean(y))^2 ))/(m+n-2) # sample variance from notes
+  test.stat <- sqrt((m*n)/(m+n))*(mean(x) - mean(y))/sqrt(sample.var) # notes
+  p.val.manual[i] <- 2*ifelse(test=test.stat < 0, 
+                              yes=pt(q=test.stat, df=n+m-2), 
+                              no=1-pt(q=test.stat, df=n+m-2)
+                              )
+  #
+  # `var.equal=TRUE` calls for pooled approach
+	# `p.value` is object associated with `t.test()`
+  p.val.auto[i] <- t.test(x=x, y=y, alternative="two.sided", var.equal=TRUE)$p.value
+}
+sum(p.val.manual < .05)/B
+sum(p.val.auto < .05)/B
+```
+When the true means are different, the probability of correctly predicting that there's a difference is better if there is a large distance between the means, or a smaller variance, or a large sample size.  
+
+When the means are the same, none of those factors seem to matter.
+
+Let's see what happens when we compare a normal distribution with a chi-square distribution where the means and variances are equal.
+```{r}
+var.y <- 10; mu.y <- 5; n <- 10; m <- 10; B <- 10000; p.value1 <- numeric(B)
+
+# we have same mean and variance but different distributions
+for (i in 1:B) {
+	x <- rchisq(n=n, df=5) # same mean and variance as y
+	y <- rnorm(n=m, mean=mu.y, sd=sqrt(var.y))
+	p.value1[i] <- t.test(x=x, y=y, var.equal=TRUE)$p.value
+}
+cat(sum(p.value1 < .05)/B, '\n')
+# distribution of chi-square is close enough to t-distribution 
+# n=10 is not large, but distribution is similar
+```
+It turns out that the chi-square distribution is close enough to a *t*-distribution.  The sample size $n=m=10$ is small, but it appears that increasing sample size doesn't change the conclusion in any significant manner.
+
+###Different Variances  
+This is the Behrens-Fisher problem.
+
+Suppose, first, that $\sigma^2_X$ and $\sigma^2_Y$ are known and different.  
+
+The log-likelihood, except for an additive constant, is
+\[
+\ell(\mu_X, \mu_Y) \propto - \frac{1}{2\sigma_X^2} \sum_{i=1}^n (X_i - \mu_X)^2 - \frac{1}{2\sigma_Y^2} \sum_{j=1}^m (Y_j - \mu_Y)^2
+\]
+The unconstrained MLE for $\mu_X$ and $\mu_Y$ is $\overline{X}$ and $\overline{Y}$, respectively.
+
+Under $H_0$, $\mu_X = \mu_Y = \mu_0$ (which means we have only one unknown parameter), we have
+\[
+L(\mu_0)=\frac{1}{(2\pi \sigma_X^2)^{n/2}}\exp\bigg\{ - \frac{\sum_{i=1}^n (X_i - \mu_0)^2}{2\sigma_X^2}\bigg\} \frac{1}{(2\pi \sigma_Y^2)^{m/2}}\exp\bigg\{ - \frac{\sum_{j=1}^m (Y_j - \mu_0)^2}{2\sigma_Y^2}\bigg\}
+\]
+yielding the log-likelihood
+\[
+\ell(\mu_0)= - \frac{m+n}{n}\ln(2\pi) - \frac{n}{2} \ln (\sigma_X^2) - \frac{m}{n}\ln(\sigma_Y^2) - \frac{\sum_{i=1}^n (X_i - \mu_0)^2}{2 \sigma_X^2} - \frac{\sum_{j=1}^m (Y_j- \mu_0)^2}{2\sigma_Y^2}
+\]
+Setting the derivative of this single parameter to zero yields
+\[
+\frac{\sum_{i=1}^n (X_i - \hat{\mu}_0)}{\sigma_X^2} + \frac{\sum_{j=1}^m (Y_j - \hat{\mu}_0)}{\sigma_Y^2} = 0
+\]
+giving the MLE
+\[
+\hat{\mu}_0 = \frac{\sum_{i=1}^n X_i + \gamma \sum_{i=1}^m Y_j}{n + \gamma m} \ \ \ (\dagger)
+\]
+where $\gamma = \frac{\sigma^2_X}{\sigma^2_Y}$, which is a ratio of variances.
+
+It follows that
+\[
+\begin{aligned}
+\Lambda &= \exp\Bigg\{\frac{1}{2\sigma_X^2} \bigg[\sum_{i=1}^n (X_i - \overline{X})^2 - \sum_{i=1}^n (X_i - \hat{\mu}_0)^2\bigg] + \frac{1}{2\sigma_Y^2} \bigg[\sum_{i=1}^m (Y_i - \overline{Y})^2 - \sum_{j=1}^m (Y_i - \hat{\mu}_0)^2\bigg]\Bigg\} \\
+       &= \exp\bigg\{-\frac{1}{2 \sigma_X^2}n(\underbrace{\overline{X} - \hat{\mu}_0})^2 - \frac{1}{2 \sigma_Y^2}m(\overline{Y} - \hat{\mu}_0)^2\bigg\}
+\end{aligned}
+\]
+
+Next we compute $\hat{\mu}_0 - \overline{X}$ which is easier to compute than $\overline{X} - \hat{\mu}_0$ (Of course $(\hat{\mu}_0 - \overline{X})^2 = (\overline{X} - \hat{\mu}_0)^2$).  Using $(\dagger)$ for $\hat{\mu}_0$,
+\[
+\begin{aligned}
+\hat{\mu}_0 - \overline{X} &= \hat{\mu}_0 = \frac{\sum_{i=1}^n X_i + \gamma \sum_{i=1}^m Y_j}{n + \gamma m} - \frac{1}{n} \sum_{i=1}^n X_i \\
+  &= \frac{n \sum_{i=1}^n X_i + n \gamma \sum_{j=1}^m Y_j - n \sum_{i=1}^n X_i - \gamma m \sum_{i=1}^n X_i}{n(n+\gamma m)} \\
+  &= \frac{\gamma m (\overline{Y} - \overline{X})}{n + \gamma m}
+\end{aligned}
+\]
+Similarly, but not exactly symmetrical with $\hat{\mu}_0 - \overline{X}$,
+\[
+\hat{\mu}_0 - \overline{Y} = \frac{n(\overline{X} - \overline{Y})}{n + \gamma m}
+\]
+Plugging these into the likelihood ratio, we get
+\[
+\begin{aligned}
+\Lambda &= \exp\bigg\{- \frac{1}{2} \frac{(\overline{Y} - \overline{X})^2nm}{(n + \gamma m)^2}\bigg[\frac{m \gamma^2}{\sigma_X^2} + \frac{n}{\sigma_Y^2}\bigg]\bigg\} \\
+  &= \exp\bigg\{- \frac{1}{2} \frac{nm(\overline{Y} - \overline{X})^2}{n\sigma^2_Y + m\sigma_X^2} \bigg\} \\
+  &= \exp\bigg\{- \frac{1}{2}\frac{(\overline{Y} - \overline{X})^2}{\frac{\sigma_Y^2}{m}+\frac{\sigma_X^2}{n}}\bigg\}
+\end{aligned}
+\]
+
+Under $H_0$, $\overline{Y} - \overline{X} \sim N\big(0, \frac{\sigma_Y^2}{m} + \frac{\sigma_X^2}{n}\big)$
+So 
+\[
+\frac{(\overline{Y} - \overline{X})^2}{\frac{\sigma_Y^2}{m} + \frac{\sigma_X^2}{n}} \sim \chi^2_{(1)}
+\]
+for which we will reject for large values or, equivalently, for large values of $|Z|$, where
+\[
+Z = \frac{\overline{Y} - \overline{X}}{\sqrt{\frac{\sigma_Y^2}{m} + \frac{\sigma_X^2}{n}}}
+\]
+
+###Welch's Approximation  
+What if $\sigma^2_X$ and $\sigma^2_Y$ are unknown?  
+
+We have an intuitive estimate based on our previous work.
+
+Finding the distribution for this new test statistic is not trivial.
+
+Based on our previous work, the intuitive test statistic is
+\[
+T=\frac{\overline{X} - \overline{Y}}{\sqrt{\frac{s_X^2}{n} + \frac{s_Y^2}{m}}}
+\]
+The problem is getting the distribution of this test statistic.
+
+In 1947, Bernard Welch published his paper giving a solution to the Behrens-Fisher problem.
+
+The conclusion of the paper being that the test statistic approximately follows a *t*-distribution with 
+\[
+df = \frac{\Big(\frac{s_X^2}{n} + \frac{s_Y^2}{m}\Big)^2}{\frac{(s_X^2/n)^2}{n-1} + \frac{(s_Y^2/m)^2}{m-1}}
+\]
+In practice, calculating the df gives you a non-integer, which you will need to round to an integer.  The conservative approach would be to round down, allowing for a wider confidence interval.  But when df is large, rounding up or down won't make much of a difference.
+
+Where do these degrees of freedom come from?
+
+Let $s=\frac{1}{n}s_X^2 + \frac{1}{m}s_Y^2$, and recall, under normality, $\frac{(n-1)s_X^2}{\sigma_X^2}$ and $\frac{(m-1)s_Y^2}{\sigma_Y^2}$ follow independent chi-square distributions with $(n-1)$ and $(m-1)$ degrees of freedom, respectively.
+
+Furthermore, this means
+\[
+\begin{aligned}
+E(s_X^2)          &= \sigma_X^2 \\
+\text{Var}(s_X^2) &= \frac{2[E(s_X^2)]^2}{n-1} \\
+E(s_Y^2)          &= \sigma_Y^2 \\
+\text{Var}(s_Y^2) &= \frac{2[E(s_Y^2)]^2}{m-1} \\
+\end{aligned}
+\]
+
+Putting this together
+\[
+\begin{aligned}
+E(s^2)          &= \frac{1}{n} E(s_X^2) + \frac{1}{m}E(s_Y^2) \\
+\text{Var}(s^2) &= \frac{1}{n^2}\text{Var}(s_X^2) +
+                   \frac{1}{m^2}\text{Var}(s_Y^2)
+\end{aligned}
+\]
+
+The plug-in estimator of the latter is
+\[
+\widehat{\text{Var}}(s^2) = \frac{1}{n^2} \frac{2(s_X^2)^2}{n-1} + 
+                        \frac{1}{m^2} \frac{2(s_Y^2)^2}{m-1}
+\]
+The claim is then that $s^2$ acts like $s_X^2$ and $s_Y^2$ in the sense that
+\[
+\frac{df \cdot s^2}{E(s^2)} \ \ \dot{\sim} \ \ \chi^2_{(df)}
+\]
+If this is true, then
+\[
+\begin{aligned}
+E\bigg(\frac{df \cdot s^2}{E(s^2)}\bigg)          &= df \\
+\text{Var}\bigg(\frac{df \cdot s^2}{E(s^2)}\bigg) &=
+    \frac{df^2}{[E(s^2)]^2}\text{Var}(s^2) = 2 df
+\end{aligned}
+\]
+Solving the latter equation for $df$ yields
+\[
+df = \frac{2[E(s^2)]^2}{\text{Var}(s^2)}
+\]
+Since these questions are unknown, we use their estimators to get
+\[
+\begin{aligned}
+\widehat{df} &= \frac{2(s^2)^2}{\widehat{\text{Var}}(s^2)} \\
+         &= \frac{\Big(\frac{1}{n}s_X^2 + \frac{1}{m}s_Y^2\Big)}{\frac{1}{n^2}\frac{(s_X^2)^2}{n-1} + \frac{1}{m^2}\frac{(s_Y^2)^2}{m-1}} 
+\end{aligned}
+\]
+**Example** Showing what happens when we use the wrong assumption of equal variances with `t_test_comparison.R`
+```{r}
+# estimation of probability of type I error, comparing 2-sample t methods
+
+var.x <- 9			# true population variance of the Xs
+var.y <- 9			# true population variance of the Ys
+
+mu.x = 5			# true population mean of the Xs
+mu.y = 5			# true population mean of the Ys
+
+n = 10			# sample size of Xs
+m = 10			# sample size of Ys
+
+B = 1000		# number of simulated samples
+
+p.value1 = numeric(B)	# p-values assuming equal variances
+p.value2 = numeric(B)	# unequal variances
+
+for (i in 1:B) {
+#	x = rnorm(n, mu.x, sd=sqrt(var.x))
+	x = rexp(n, 1/mu.x)
+#	y = rnorm(m, mu.y, sd=sqrt(var.y))
+	y = rpois(m, mu.y)
+	p.value1[i] = t.test(x=x, y=y, var.equal=TRUE)$p.value
+	p.value2[i] = t.test(x=x, y=y, var.equal=FALSE)$p.value
+}
+
+cat(length(which(p.value1<.05))/B, '\n')
+cat(length(which(p.value2<.05))/B, '\n')
+
+```
+
+
+```{r}
+# estimation of probability of type I error, comparing 2-sample t methods
+
+var.x <- 9			# true population variance of the Xs
+var.y <- 9			# true population variance of the Ys
+
+mu.x = 5			# true population mean of the Xs
+mu.y = 5			# true population mean of the Ys
+
+n = 10			# sample size of Xs
+m = 10			# sample size of Ys
+
+B = 1000		# number of simulated samples
+
+p.value1 = numeric(B)	# p-values assuming equal variances
+p.value2 = numeric(B)	# unequal variances
+
+for (i in 1:B) {
+	x = rnorm(n, mu.x, sd=sqrt(var.x))
+#	x = rexp(n, 1/mu.x)
+	y = rnorm(m, mu.y, sd=sqrt(var.y))
+#	y = rpois(m, mu.y)
+	p.value1[i] = t.test(x=x, y=y, var.equal=TRUE)$p.value
+	p.value2[i] = t.test(x=x, y=y, var.equal=FALSE)$p.value
+}
+
+cat(length(which(p.value1<.05))/B, '\n')
+cat(length(which(p.value2<.05))/B, '\n')
+
+# results are what we hope to see
+
+# variances are the same
+
+# welch's approx (unpooled approach), which doesn't care if variance is the same.
+
+
+
+var.x <- 9			# true population variance of the Xs
+var.y <- 9			# true population variance of the Ys
+
+mu.x = 5			# true population mean of the Xs
+mu.y = 5			# true population mean of the Ys
+
+n = 10			# sample size of Xs
+m = 40			# sample size of Ys
+
+B = 1000		# number of simulated samples
+
+p.value1 = numeric(B)	# p-values assuming equal variances
+p.value2 = numeric(B)	# unequal variances
+
+for (i in 1:B) {
+	x = rnorm(n, mu.x, sd=sqrt(var.x))
+#	x = rexp(n, 1/mu.x)
+	y = rnorm(m, mu.y, sd=sqrt(var.y))
+#	y = rpois(m, mu.y)
+	p.value1[i] = t.test(x=x, y=y, var.equal=TRUE)$p.value
+	p.value2[i] = t.test(x=x, y=y, var.equal=FALSE)$p.value
+}
+
+cat(length(which(p.value1<.05))/B, '\n')
+cat(length(which(p.value2<.05))/B, '\n')
+
+
+# again what we expect to see
+
+# problems arise when variance is unequal. pooled approach should not be used. first start with equal sample size and different variance
+
+var.x <- 9			# true population variance of the Xs
+var.y <- 29			# true population variance of the Ys
+
+mu.x = 5			# true population mean of the Xs
+mu.y = 5			# true population mean of the Ys
+
+n = 10			# sample size of Xs
+m = 10			# sample size of Ys
+
+B = 1000		# number of simulated samples
+
+p.value1 = numeric(B)	# p-values assuming equal variances
+p.value2 = numeric(B)	# unequal variances
+
+for (i in 1:B) {
+	x = rnorm(n, mu.x, sd=sqrt(var.x))
+#	x = rexp(n, 1/mu.x)
+	y = rnorm(m, mu.y, sd=sqrt(var.y))
+#	y = rpois(m, mu.y)
+	p.value1[i] = t.test(x=x, y=y, var.equal=TRUE)$p.value
+	p.value2[i] = t.test(x=x, y=y, var.equal=FALSE)$p.value
+}
+
+cat(length(which(p.value1<.05))/B, '\n')
+cat(length(which(p.value2<.05))/B, '\n')
+
+# but we see what we expect.  THat's because the sample size is different.  Now change sample size AND variance
+
+var.x <- 9			# true population variance of the Xs
+var.y <- 29			# true population variance of the Ys
+
+mu.x = 5			# true population mean of the Xs
+mu.y = 5			# true population mean of the Ys
+
+n = 10			# sample size of Xs
+m = 40			# sample size of Ys
+
+B = 1000		# number of simulated samples
+
+p.value1 = numeric(B)	# p-values assuming equal variances
+p.value2 = numeric(B)	# unequal variances
+
+for (i in 1:B) {
+	x = rnorm(n, mu.x, sd=sqrt(var.x))
+#	x = rexp(n, 1/mu.x)
+	y = rnorm(m, mu.y, sd=sqrt(var.y))
+#	y = rpois(m, mu.y)
+	p.value1[i] = t.test(x=x, y=y, var.equal=TRUE)$p.value
+	p.value2[i] = t.test(x=x, y=y, var.equal=FALSE)$p.value
+}
+
+cat(length(which(p.value1<.05))/B, '\n')
+cat(length(which(p.value2<.05))/B, '\n')
+
+# here we have a small type-I error.
+
+# power doesn't apply here b/c means were same - it's impossible to reject.
+
+# Why not use Welch all the time?  For thing, the pooled approach is an exact approach.  If null is true (variances are equal), the pooled approach has more power than Welch approx.  
+
+# how do you assume the variances are equal? Depends on field - some have standards where you follow convention
+# from statistician pt of view, you can start with an F test to compare variances (but assumes sample comes from normal distribution.)
+# conservative approach is Welch's approx, since there are fewer assumptions made and is more robust in handling different variances.
+```
+
+
+**February 29, 2016** 
+The following shows how to use Welch's approximation in `R`.
+
+We start with an example where $H_0$ is true: $\mu_X = \mu_Y$.
+```{r fig.width=4, fig.height=5}
+# Welch's result
+# unequal variances, both unknon
+
+var.x <- 15		# true population variance of the Xs
+var.y <- 9			# true population variance of the Ys
+
+mu.x <- 5			# true population mean of the Xs
+mu.y <- 5			# true population mean of the Ys
+
+n <- 10			# sample size of Xs
+m <- 10			# sample size of Ys
+
+B <- 1000		# number of simulated samples
+
+test.stat <- numeric(B)	# test statistic values
+
+# simulation according to parameter
+for (i in 1:B) {
+	x <- rnorm(n, mu.x, sqrt(var.x))
+	y <- rnorm(m, mu.y, sqrt(var.y))
+	test.stat[i] <- t.test(x,y,var.equal=FALSE)$statistic
+}
+
+df <- (var.x/n+var.y/m)^2/( (var.x/n)^2/(n-1) + (var.y/m)^2/(m-1))
+hist(test.stat, freq=FALSE)
+t <- seq(min(test.stat), max(test.stat), length=1000)
+lines(t, dt(t,df), col='red') # overlay with the null distribution
+
+# When null is true, we expect the null distribution follows t-distribution
+```
+
+
+Now we'll let $\mu_Y=7$ so that the $H_0$ is false.
+
+```{r fig.width=4, fig.height=5}
+# Welch's result
+# unequal variances, both unknon
+
+var.x <- 15		# true population variance of the Xs
+var.y <- 9			# true population variance of the Ys
+
+mu.x <- 5			# true population mean of the Xs
+mu.y <- 7			# true population mean of the Ys
+
+n <- 10			# sample size of Xs
+m <- 10			# sample size of Ys
+
+B <- 10000		# number of simulated samples
+
+test.stat <- numeric(B)	# test statistic values
+
+# simulation according to parameter
+for (i in 1:B) {
+	x <- rnorm(n, mu.x, sqrt(var.x))
+	y <- rnorm(m, mu.y, sqrt(var.y))
+	test.stat[i] <- t.test(x,y,var.equal=FALSE)$statistic
+}
+
+df <- (var.x/n+var.y/m)^2/( (var.x/n)^2/(n-1) + (var.y/m)^2/(m-1))
+hist(test.stat, freq=FALSE)
+t <- seq(min(test.stat), max(test.stat), length=1000)
+lines(t, dt(t,df), col='red') # overlay with the null distribution
+
+```
+
+Notice that there is a lot of overlap, which tells us that our power is low.  This is due in large part similar means and small sample sizes.
+
+Last, increase $\mu_Y$ to $12$.
+```{r fig.width=4, fig.height=5}
+# Welch's result
+# unequal variances, both unknon
+
+var.x <- 15		# true population variance of the Xs
+var.y <- 9			# true population variance of the Ys
+
+mu.x <- 5			# true population mean of the Xs
+mu.y <- 12			# true population mean of the Ys
+
+n <- 10			# sample size of Xs
+m <- 10			# sample size of Ys
+
+B <- 10000		# number of simulated samples
+
+test.stat <- numeric(B)	# test statistic values
+
+# simulation according to parameter
+for (i in 1:B) {
+	x <- rnorm(n, mu.x, sqrt(var.x))
+	y <- rnorm(m, mu.y, sqrt(var.y))
+	test.stat[i] <- t.test(x,y,var.equal=FALSE)$statistic
+}
+
+df <- (var.x/n+var.y/m)^2/( (var.x/n)^2/(n-1) + (var.y/m)^2/(m-1))
+hist(test.stat, freq=FALSE)
+t <- seq(min(test.stat), max(test.stat), length=1000)
+lines(t, dt(t,df), col='red') # overlay with the null distribution
+
+```
+
+Power is much greater.
+
+###Paired Samples  
+Clearly, we are now in the situation where the samples are no longer independent.  This means that we will have a nonzero covariance in the standard error of $\overline{Y} - \overline{X}$.
+
+We will now assume that the differences of the pairs $D_1, \dots, D_n$, are normally distributed.  If we assume observations within a sample are independent, but the $i^{th}$ observation in one sample is related to the $i^{th}$ observation in the other sample, then $D_1, \dots, D_n$ are independent with
+\[
+\begin{aligned}
+\text{Var}(\overline{D}) &= \text{Var}(\overline{X} - \overline{Y}) \\
+  &= \text{Var}\bigg(\frac{1}{n} \sum_{i=1}^n (X_i - Y_i)\bigg) \\
+  &= \frac{1}{n^2} \sum_{i=1}^n \text{Var}(X_i - Y_i) \\
+  &= \frac{1}{n^2} \sum_{i=1}^n [\text{Var}(X_i) + \text{Var}(Y_i) - 2\text{Cov}(X_i, Y_i)] \\
+  &= \frac{1}{n^2} (n\sigma^2_X + n\sigma^2_Y - 2n \sigma_{XY}) \\
+  &= \text{Var}(\overline{X}) + \text{Var}(\overline{Y}) - \frac{2}{n}\sigma_{XY}
+\end{aligned}
+\]
+
+- $(X_i - Y_i)$'s are independent, so variance of the sums are equal to the sum of the variances.  But $X_i$'s are not independent from $Y_i$'s, so $\text{Var}(X_i - Y_i) \neq \sigma^2_X + \sigma^2_Y$.
+- The value of $\text{Cov}(X_i, Y_i)$ does not depend on $i$, $\text{Cov}(X_i, Y_i) = \sigma_{XY}$.
+
+If we ignore the pairing (assume that $X_i$ and $Y_i$ are independent), and there is a positive relationship between $X$ and $Y$, then $\sigma_{XY} > 0 $, and we would be overestimating variance, $\text{Var}(\overline{D})$.  A negative relationship would cause us to underestimate the variance.  The consequence is that the confidence interval for a *t*-test would be too wide (overestimating the variance) or too narrow.
+
+In practice, we do not estimate the covariance directly.  Rather, we estimate $\text{Var}(\overline{D}) = \frac{\text{Var}(D)}{n}$ with the sample variance of the differences.
+\[
+\begin{aligned}
+\widehat{\text{Var}}(\overline{D}) &= \widehat{\text{Var}}(\overline{X} - \overline{Y}) \\
+  &= \frac{s_X^2}{n} + \frac{s_Y^2}{n} - \frac{2}{n}s_{XY} \\
+  &= \frac{1}{n-1} \sum_{i=1}^n [(X_i - Y_i) - (\overline{X} - \overline{Y})]^2/n \\
+  &= \underbrace{\frac{1}{n-1} \sum_{i=1}^n [D_i - \overline{D}]^2}_{sample variance of the differences}/n \\
+  &= \frac{s_D^2}{n}
+\end{aligned}
+\]
+
+This can now be viewed as a one-sample problem on the differences rather than a two-sample problem on the $X$'s and $Y$'s ($D_i$'s are i.i.d.).
+
+This leads to the test statistic
+\[
+T = \frac{\overline{D} - \mu_{D_0}}{s_D/\sqrt{n}}
+\]
+which, under $H_0$, follows a *t*-distribution with $df=n-1$.
+
+Note: $\mu_{D_0}$ is usually zero.
+
+###Testing for Independence (Test for $\rho$)  
+Recall that for bivariate normal random variables $X$ and $Y$, the correlation coefficient, $\rho$, is zero iff they are independent.  Thus a test for independence is equivalent to a test for a $\rho=0$,
+\[
+H_0: \rho = 0 \ \ \ \text{vs.} \ \ \ H_1: \rho \neq 0
+\]
+For bivariate normal random variables $X$ and $Y$, their joint pdf is
+\[
+f_{XY}(x,y) = \frac{1}{2 \pi \sigma_X \sigma_Y \sqrt{1 - \rho^2}} \exp \Bigg\{- \frac{1}{2(1 - \rho)^2} \bigg[\bigg(\frac{x - \mu_X}{\sigma_X}\bigg)^2 + \bigg(\frac{y - \mu_Y}{\sigma_Y}\bigg)^2 - 2 \rho \frac{(x - \mu_X)(y - \mu_Y)}{\sigma_X \sigma_Y}\bigg] \Bigg\}
+\]
+
+- This is 3-dimensional: it includes $x, y,$ and the density.
+- Note that this pdf describes a single pair of observations.  We are interested in multiple pairs, so we need to derive a likelihood.
+
+Therefore, if we are talking about $n$ independent bivariate points $(x_1,y_1), \dots, (x_n, y_n)$, and letting $\boldsymbol{\theta} = (\mu_X, \mu_Y, \sigma_X^2, \sigma_Y^2, \rho)$, then the log-likelihood function is
+\[
+\ell(\boldsymbol{\theta}) = -n \ln\bigg(2 \pi \sigma_X \sigma_Y \sqrt{1 - \rho^2}\bigg) - \frac{1}{2(1 - \rho^2)} \Bigg[\frac{\sum_{i=1}^n (x_i - \mu_X)^2}{\sigma_X^2} + \frac{\sum_{i=1}^n (y_i - \mu_Y)^2}{\sigma_Y^2} - \frac{2 \rho \sum_{i=1}^n (x_i - \mu_X)(y_i - \mu_Y)}{\sigma_X \sigma_Y} \Bigg]
+\]
+Determining the mle's of the five parameters requires taking five partial derivatives wrt each parameter, setting the derivative to zero, and solving for the parameter to find the maximum.  Those steps will be omitted.
+
+So the unrestricted maximum likelihood estimator of $\boldsymbol{\theta}$ is
+\[
+\begin{aligned}
+\boldsymbol{\theta} &= (\overline{X}, \overline{Y}, \hat{\sigma}_X^2, \hat{\sigma}^2_Y, \hat{\rho}) \ \ \text{where} \\
+  & \\
+\hat{\sigma}_X^2 &= \frac{1}{n} \sum_{i=1}^n (X_i - \overline{X})^2 \\
+\hat{\sigma}_Y^2 &= \frac{1}{n} \sum_{i=1}^n (Y_i - \overline{Y})^2 \\
+\hat{\rho} &= \frac{\sum_{i=1}^n (X_i - \overline{X})(Y_i - \overline{Y})}{n \hat{\sigma}_X \hat{\sigma}_Y}
+\end{aligned}
+\]
+If $H_0$ is true (meaning that $\rho = 0$), then we have two independent samples, and $\hat{\boldsymbol{\theta}}_0$ can be obtained by separately maximizing the likelihood of $X_1, \dots, X_n$ and $Y_1, \dots, Y_n$.  We have $\hat{\boldsymbol{\theta}}_0 = (\overline{X}, \overline{Y}, \hat{\sigma}_X^2, \hat{\sigma}^2_Y, \rho=0)$, and therefore
+\[
+\begin{aligned}
+- 2\ln \Lambda &= 2[\ell(\hat{\boldsymbol{\theta}}) - \ell(\hat{\boldsymbol{\theta}}_0)] \\
+  &= 2 \bigg[-n \ln(2\pi \hat{\sigma}_X \hat{\sigma}_Y) - \frac{n}{2} \ln (1 - \hat{\rho}^2) - n\bigg] - 2 \bigg[-n \ln(2 \pi \hat{\sigma}_X \hat{\sigma}_Y) - n \bigg] \\
+  &= - n \ln(1 - \hat{\rho}^2)
+\end{aligned}
+\]
+The LR statistic is an increasing function of $\hat{\rho}^2$ since $\rho^2$ can only take values between $0$ and $1$. So we reject $H_0$ for large values $\hat{\rho}^2$ or $\big| \hat{\rho} \big|$.
+
+In order to obtain a rejection region we need the distribution of $\hat{\rho}$, or an equivalent statistic, under $H_0$.
+
+Now
+\[
+\hat{\rho} = \frac{\sum_{i=1}^n (U_i - \overline{U})(V_i - \overline{V})}{\big[\sum_{i=1}^n (U_i - \overline{U})^2\big]^{1/2} \big[\sum_{i=1}^n (V_i - \overline{V})^2\big]^{1/2}}
+\]
+where $U_i = \frac{X_i - \mu_X}{\sigma_X}$ and $V_i = \frac{Y_i - \mu_Y}{\sigma_Y}$.
+
+- If $X_i$ and $Y_i$ follow a normal distribution, then $U_i$ and $V_i$ also follow a normal distribution.
+
+Because $(U_1, V_1), \dots, (U_n, V_n)$ is a smaple from $N(0,0,1,1,\rho)$, the distribution of $\hat{\rho}$ depends only on $\rho$.  If $\rho = 0$, then
+\[
+T= \frac{\sqrt{n-2}\hat{\rho}}{\sqrt{1 - \hat{\rho}^2}}
+\]
+has a *t*-distribution with $df=n-2$.
+
+When $\rho \neq 0$, there is no simple form for the distribution of $\hat{\rho}$ (or $T$).  However, a normal approximation is available.
+
+For any $\alpha$, the power function of the LR test is symmetric about $\rho=0$ and increases continuously from $\alpha$ to one, as $|\rho|$ goes from $0$ to $1$.  
+
+###Distribution of $\hat{\rho} (=r)$  
+Under $H_0: \rho = 0$, the sample correlation coefficient calculated from bivariate normal data has pdf 
+\[
+f_R(r) = \frac{1}{\Gamma\big(\frac{1}{2}\big)} \frac{\Gamma\big(\frac{n-1}{2}\big)}{\Gamma\big(\frac{n-2}{2}\big)} (1 - r^2)^{(n-4)/2} \ \ \ -1 < r < 1
+\]
+If we let $u=\frac{R\sqrt{n-2}}{\sqrt{1 - R^2}}$, then 
+\[
+R = \frac{u}{\sqrt{n-2+u^2}} = g(u)
+\]
+Taking the derivative, we get
+\[
+\begin{aligned}
+\frac{dg(u)}{du} &= \frac{(n-2 + u^2)^{1/2}(1) - u \frac{1}{2}(n-2+u^2)^{-1/2}(2u)}{(\sqrt{n-2+u^2})^2} \\
+  &= \frac{1}{\sqrt{n-2+u^2}} - \frac{u^2}{(n-2+u^2)^{3/2}} \\
+  &= \frac{1}{\sqrt{n-2+u^2}} - \bigg(1 - \frac{u^2}{n-2+u^2}\bigg)
+\end{aligned}
+\]
+Using the change-of-variable technique and letting $v=n-2$, we have
+\[
+\begin{aligned}
+f_u(u) &= \frac{1}{\Gamma\big(\frac{1}{2}\big)} \frac{\Gamma\big(\frac{v+1}{2}\big)}{\Gamma\big(\frac{v}{2}\big)} \bigg(1 - \frac{u^2}{v+u^2}\bigg)^{(v-2)/2} \frac{1}{\sqrt{v + u^2}}\bigg(1 - \frac{u^2}{v + u^2} \bigg) \\
+  &= \frac{\Gamma\big(\frac{v+1}{2}\big)}{\sqrt{\pi} \Gamma\big(\frac{v}{2}\big)} \bigg(1 - \frac{u^2}{v+u^2}\bigg)^{v/2} \bigg( \frac{1}{v + u^2}\bigg)^{1/2} \bigg(\frac{v}{v}^{1/2}\bigg) \\
+  &= \frac{\Gamma\big(\frac{v+1}{2}\big)}{\sqrt{v \pi} \Gamma\big(\frac{v}{2}\big)} \bigg(1 + \frac{u^2}{v}\bigg)^{-v/2} \bigg(1 + \frac{u^2}{v}\bigg)^{-1/2} \\
+  &= \frac{\Gamma\big(\frac{v+1}{2}\big)}{\sqrt{v \pi} \Gamma\big(\frac{v}{2}\big)} \bigg(1 + \frac{u^2}{v} \bigg)^{-(v+1)/2} \ \ \ -\infty < u < \infty
+\end{aligned}
+\]
+which is the pdf of a random variable following a *t*-distribution with $df=v=n-2$.
+
+
+**March 02, 2016**  
+
+###Nonparametric Methods  
+**Permutation Test (Randomization Test)**  
+Suppose we have two samples (one from each population) of size $n_1$ and $n_2$ with $n_1 + n_2 = n$.  
+
+The idea of the permutation test is to compare two populations as follows:
+
+1) if there really is no difference between the populations, then from the *n* total observations, it should not matter which $n_1$ of them are assigned to sample $1$, and the rest, $n_2$, sample $2$.  
+2) if we do the above for all possible permutations, we can calculate $D$, the difference in means (or medians, variances, quartiles, or whatever) of the two samples.
+3) we calculate the *p*-value by calculating the proportion of these $D$'s that are as, or more, extreme as the $D$ from the original data.
+
+**Example** Suppose we want to compare the average time spent studying by students in a graduate course vs. students in an undergraduate course.  
+
+Let our data be $g=\{4, 5, 5, 8, 9\}$ and $u=\{3, 4, 2, 5\}$.  
+
+There are $\binom{9}{5}=126$ ways to assign 5 of 9 people into group $g$, where order is unimportant.  
+
+Using the professor's `R` script, `permutation_sim.R`
+```{r}
+# perm.test
+# a is the first sample
+# b is the second sample
+# c is the number of permuations to simulate
+
+perm.test = function(a,b,c=10000, alt=c("two.sided")){
+  obs.dif = mean(b) - mean(a)
+	dat = c(a,b)
+	na = length(a)
+	nb = length(b)
+	n = length(a)+length(b)
+	dif.perm = numeric(c)
+	
+	for (i in 1:c){
+		ind = sample(1:n, na, replace = FALSE)
+		a.random = dat[ind]
+		b.random = dat[!1:n %in% ind]
+		dif.perm[i] = mean(b.random) - mean(a.random)
+	}
+	if (alt=="greater") p.value = sum( dif.perm >= obs.dif)/c
+	if (alt=="less") p.value = sum( dif.perm <= obs.dif)/c
+	if (alt=="two.sided") p.value = sum( abs(dif.perm) >= abs(obs.dif))/c
+	return(p.value)
+}
+```
+
+Now enter in data
+```{r}
+u <- c(3, 4, 2, 5)
+g <- c(4, 5, 5, 8, 9)
+perm.test(u, g) # two-sided test
+perm.test(u, g, alt="greater") # test to show grad students study more
+```
+
+If we were to apply the t-test:
+```{r}
+t.test(u, g, equal.var=FALSE, alt="less")
+```
+
+The permutation is more appropriate here, but it has less power than a t-test.
+
+What we are actually testing in the previous example is
+\[
+H_0: F_g(x) = F_u(x) \ \ \ \text{vs.} \ \ \ H_1: F_g(x) \leq F_u(x),
+\]
+where strict inequality occurs for at least one $x$.
+
+The null hypothesis says the two distributions are identical whereas the alternative says the observations from the $g$ group tend to be larger than that of the $u$ group.
+
+```{r}
+x <- seq(-3, 6, length=1000)
+plot(x, pnorm(x), type='l')
+lines(x, pnorm(x, 3), col='red')
+```
+
+The statement above is the same as $H_1: \mu_g > \mu_u$ in the parametric case.
+
+We can also have the one-sided alternative 
+\[
+H_1: F_g(x) \geq F_u(x)
+\]  
+or the two-sided alternative 
+\[
+H_1: F_g(x) \geq F_u(x) \ \ \text{or} F_g(x) \leq F_u(x)
+\]
+This can be usefl since the researcher is free to choose any statistic (e.g. median) that he/she feels best describes the difference between two groups.
+
+Using the approximation (simulated) to the exact permutation, then some theory says that we have about a $95\%$ chance of begin within
+\[
+\pm \sqrt{\frac{1(1-p)}{R}}
+\]
+where $R$ is the number of simulated permutations.
+
+###Wilcoxon Rank Sum Test  
+This is a two-sample permutation test on the ranks between the two groups.
+
+For this, we assume that there are no ties (we will deal with this later).  
+
+Let $X_1, \dots, X_n$ denote the set of $n$ observations.  The rank $X_i$ among the *n* observations, denoted $R(X_i)$ is given by
+\[
+R(X_i) = \text{number of X's \leq X_i}
+\]
+The test statistic is $W$, the sum of the ranks from one of the groups.
+
+In `R`, we use the function `wilcox.test()`.
+```{r}
+wilcox.test(u, g, alt='less') #only approximate because of ties.
+```
+
+**Example**  Let group 1 be $\{15, 16, 18, 20\}$ and group 2 be $\{10, 11, 24, 13, 17\}$.  Therefore, the ranks for group 1 are $\{4, 5, 7, 8\}$ and for group 2 are $\{1, 2, 9, 3, 6\}$
+```{r}
+a <- c(15, 16, 18, 20)
+b <- c(10, 11, 24, 13, 17)
+wilcox.test(a, b, alt='greater')
+wilcox.test(a, b, conf.int=TRUE) # obtain confidence interval
+```
+
+
