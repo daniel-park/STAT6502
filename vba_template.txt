@@ -1,0 +1,153 @@
+Option Base 1  'Counting starts at 1, not 0
+
+Dim HeaderRowIdx As Integer
+Dim BottomRowIdx As Integer
+Dim FarRightColumnIdx As Integer
+
+
+'Sub testing()
+    'Workbooks("mock_records.xlsx").Worksheets("mock_records").Select
+    'Range("A1").Select
+    'Sheets.Add.Name = "NEW"
+    'MyFirstRowAddress = Range("A1").End(xlDown).Address
+    'Range("A1").Value = MyFirstRowAddress
+    'Selection.End(xlDown).Select
+
+    'Range(MyFirstRowAddress).Select
+    'MyColumnNumber = ActiveCell.Column
+    'Range("A1").Value = MyColumnNumber
+    ' Last row of data
+    'MyVeryLastRow = Range("A1048576").End(xlUp).Row
+    'Range("B1").Value = MyVeryLastRow
+'End Sub
+
+'Sub conc_loop()
+'    Workbooks("mock_records.xlsx").Worksheets("mock_records").Select
+'    Range("A1").Select
+'    MyFirstRow = Range("A1").End(xlDown).Row
+'End Sub
+
+
+
+Sub copy_paste_to_new_worksheet()
+    Workbooks("mock_records.xlsx").Worksheets("mock_records").Select
+    
+    'Start from bottom to find where rows end
+    Range("A1048576").End(xlUp).Select
+    ' Record bottom row position
+    BottomRowIdx = ActiveCell.Row
+    ' Start from the far end of bottom row to find the last column position
+    FarRightColumnIdx = Cells(BottomRow, 1000).End(xlToLeft).Column
+
+    ' Select the entire range of data
+    Range(Cells(1, 1), Cells(BottomRow, FarRightColumn)).Copy
+
+    ' Create new worksheet
+    Sheets.Add.Name = "test"
+    ' Select new worksheet (probably not necessary)
+    '  Creating it makes it the active worksheet.
+    Worksheets("test").Select
+    
+    ' Select the first cell from where the pasting begins
+    '  Likely not necessary. By creating new sheet, A1 is the active cell
+    Range("A1").Select
+    ' Paste copied data
+    ActiveSheet.Paste
+    'Debug.Print BottomRightRow & " " & BottomRightColumn
+End Sub
+
+Sub insert_col()
+    Workbooks("mock_records.xlsm").Worksheets("test").Select
+    HeaderRowIdx = Range("A1").End(xlDown).Row
+    PatientIdColIdx = Rows(HeaderRowIdx).Find(What:="PatientID").Column
+    
+    Cells(1, PatientIdColIdx + 1).EntireColumn.Insert
+    Range("E6").Value = "MemberPatientID"
+
+    LastRowIdx = Cells(HeaderRowIdx, 1).End(xlDown).Row
+
+    
+    Range(Cells(HeaderRowIdx + 1, 5), Cells(LastRowIdx, 5)).Formula = _
+        "=CONCATENATE(C7, ""_"", D7)" 'must use double quotes
+
+
+    'For X = headerRowIdx + 1 To LastRowIdx
+    '    Cells(X, 5).Value = Cells(X, 3).Value & "_" & Cells(X, 4).Value
+    'Next
+    'ColOffset = Application.WorksheetFunction.MATCH("Customer Lead",Sheet1!$1:$1,0)
+End Sub
+
+Sub remove_initial()
+    'Dim regex As RegExp
+    'Set regex = New RegExp
+     Worksheets("test").Columns("B").Replace _
+ What:=" O ", Replacement:=" ", _
+ SearchOrder:=xlByColumns, MatchCase:=True
+End Sub
+
+Sub find_column_pos()
+    ' Header row location
+    HeaderRowIdx = Range("A1").End(xlDown).Row
+    'Debug.Print headerRowIdx
+    dateColIdx = Rows(HeaderRowIdx).Find(What:="Date").Column
+    Debug.Print dateLocation
+End Sub
+
+Sub member_name_dict()
+    Workbooks("mock_records.xlsm").Worksheets("test").Select
+    HeaderRowIdx = Range("A1").End(xlDown).Row
+    MemberPatientIdColIdx = Rows(HeaderRowIdx).Find(What:="MemberPatientID").Column
+    NameColIdx = Rows(HeaderRowIdx).Find(What:="Name").Column
+    'Debug.Print MemberPatientIdColIdx & " " & NameAddressColIdx
+    'Select non-adjacent columns
+    Application.Union(Cells(HeaderRowIdx, MemberPatientIdColIdx), Cells(HeaderRowIdx, NameColIdx)).EntireColumn.Copy
+    Sheets.Add.Name = "dictionary"
+    ActiveSheet.Paste
+    Columns("A:A").Insert Shift:=xlToLeft 'Insert empty column
+    Columns("C:C").Cut Destination:=Columns("A:A")
+End Sub
+
+
+
+Sub remove_dupes()
+    ' not working
+    HeaderRowIdx = Range("A1").End(xlDown).Row
+    LastRowIdx = Cells(HeaderRowIdx, 1).End(xlDown).Row
+    'Range(Cells(HeaderRowIdx, 1), Cells(LastRowIdx, 2)).Select
+    'ActiveSheet.Range(Cells(HeaderRowIdx, 1), Cells(LastRowIdx, 2)).RemoveDuplicates Columns:=Array(1, 2), Header:=xlYes
+    Range("A:B").RemoveDuplicates Columns:=VBA.Array(1, 2), Header:=xlYes
+    'With ActiveSheet
+       'Rng = Range(Cells(HeaderRowIdx, 1), Cells(LastRowIdx, 2))
+       'Set Rng = Range("A1", Range("B1").End(xlDown))
+        'Debug.Print Rng
+        'Rng.RemoveDuplicates Columns:=Array(1, 2), Header:=xlYes
+    'End With
+End Sub
+
+
+Sub Enter_Name()
+    Workbooks("mock_records.xlsm").Worksheets("Sheet5").Select
+    HeaderRowIdx = Range("A1").End(xlDown).Row
+    LastRowIdx = Cells(HeaderRowIdx, 1).End(xlDown).Row
+    LastColIdx = Cells(HeaderRowIdx, 1).End(xlToRight).Column
+    Debug.Print HeaderRowIdx & " " & LastRowIdx
+    Cells(HeaderRowIdx, LastColIdx + 1).Value = "Name"
+
+    For i = HeaderRowIdx + 1 To LastRowIdx
+        'Debug.Print .Formula = "=ISERROR(MATCH(""*_*"", Cells(i, 1), 0))"
+        'Debug.Print WorksheetFunction.IsNA(WorksheetFunction.Match("*_*", Cells(i, 1), 0))
+         If Not (IsError(Application.Match("*_*", Cells(i, 1), 0))) Then
+            PatientName = Application.VLookup(Cells(i, 1), Sheets("dictionary").Range("A:B"), 2, False)
+        End If
+    Cells(i, 3).Value = PatientName
+    Next
+End Sub
+
+Sub ppo_dict()
+    Workbooks("mock_records.xlsm").Worksheets("test").Select
+    HeaderRowIdx = Range("A1").End(xlDown).Row
+    MemberPatientIdColIdx = Rows(HeaderRowIdx).Find(What:="MemberPatientID").Column
+    NameColIdx = Rows(HeaderRowIdx).Find(What:="Name").Column
+
+    Application.Union(Cells(HeaderRowIdx, MemberPatientIdColIdx), Cells(HeaderRowIdx, NameAddressColIdx)).EntireColumn.Copy
+End Sub
