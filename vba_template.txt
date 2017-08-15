@@ -151,3 +151,15 @@ Sub ppo_dict()
 
     Application.Union(Cells(HeaderRowIdx, MemberPatientIdColIdx), Cells(HeaderRowIdx, NameAddressColIdx)).EntireColumn.Copy
 End Sub
+
+Sub remove_duplicates()
+    Workbooks("mock_records.xlsm").Worksheets("Sheet13").Select
+    'Columns("A:B").Select
+    'ActiveSheet.Range("A1:B9").RemoveDuplicates Columns:=Array(1, 2), Header:=xlYes
+    'Selection.RemoveDuplicates Columns:=Array(1, 2), Header:=x
+     Range("A1:B9").Sort key1:=Range("B1:B9"), _
+   order1:=xlAscending, Header:=xlYes
+    'ActiveSheet.Range("A1:C100").RemoveDuplicates Columns:=Array(1, 2), Header:=xlYes
+    'Range("A1").CurrentRegion.RemoveDuplicates Columns:=Array(1), Header:=xlYes
+
+End Sub
